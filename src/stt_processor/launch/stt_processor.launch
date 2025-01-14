@@ -1,0 +1,3 @@
+<launch>
+    <node name="SttProcessor" pkg="stt_processor" type="RealtimeTranscriber.py" />
+</launch>

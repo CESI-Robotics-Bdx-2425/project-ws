@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transcription en temps réel</title>
+    <script src="https://cdn.jsdelivr.net/npm/roslib/build/roslib.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        span {
+            font-size: 24px;
+        }
+        #transcription {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            min-height: 100px;
+            background-color: #f9f9f9;
+        }
+        #status {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            font-size: 24px;
+        }
+        .partial {
+            color: #666;
+            font-style: italic;
+        }
+        .final {
+            color: #000;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .previous-final {
+            color: #666;
+            display: block;
+            margin-bottom: 10px;
+        }
+        h1 {
+            color: #333;
+            font-size: 32px;
+        }
+    </style>
+    <meta charset="utf-8" />
+</head>
+<body>
+    <h1>Transcription en temps réel</h1>
+    <div id="status">Status: Déconnecté</div>
+    <div id="transcription"></div>
+
+    <script>
+        // Variables globales pour l'affichage
+        const transcriptionDiv = document.getElementById('transcription');
+        const statusDiv = document.getElementById('status');
+        let partialSpan = null;
+        let previousFinalSpan = null;
+        let currentFinalSpan = null;
+
+        // Connexion au serveur ROSBridge
+        const ros = new ROSLIB.Ros({
+            url: 'ws://10.68.0.129:9090' // Adresse du serveur ROSBridge
+        });
+
+        // Gestion des événements ROS
+        ros.on('connection', () => {
+            statusDiv.textContent = 'Status: Connecté';
+            statusDiv.style.backgroundColor = '#e6ffe6';
+        });
+
+        ros.on('error', (error) => {
+            console.error('Erreur de connexion à ROS:', error);
+            statusDiv.textContent = 'Status: Erreur de connexion';
+            statusDiv.style.backgroundColor = '#ffe6e6';
+        });
+
+        ros.on('close', () => {
+            statusDiv.textContent = 'Status: Déconnecté';
+            statusDiv.style.backgroundColor = '#fff3cd';
+        });
+
+        // Création des abonnements aux topics
+        const partialTopic = new ROSLIB.Topic({
+            ros: ros,
+            name: '/stt/partial',
+            messageType: 'std_msgs/String'
+        });
+
+        const fullTopic = new ROSLIB.Topic({
+            ros: ros,
+            name: '/stt/full',
+            messageType: 'std_msgs/String'
+        });
+
+        // Gestion des messages partiels
+        partialTopic.subscribe((message) => {
+            if (!partialSpan) {
+                partialSpan = document.createElement('span');
+                partialSpan.className = 'partial';
+                transcriptionDiv.appendChild(partialSpan);
+            }
+            partialSpan.textContent = message.data;
+        });
+
+        // Gestion des messages finaux
+        fullTopic.subscribe((message) => {
+            if (partialSpan) {
+                partialSpan.remove();
+                partialSpan = null;
+            }
+
+            if (currentFinalSpan) {
+                if (previousFinalSpan) {
+                    previousFinalSpan.remove();
+                }
+                previousFinalSpan = currentFinalSpan;
+                previousFinalSpan.className = 'previous-final';
+            }
+
+            currentFinalSpan = document.createElement('span');
+            currentFinalSpan.className = 'final';
+            currentFinalSpan.textContent = message.data;
+            transcriptionDiv.appendChild(currentFinalSpan);
+        });
+    </script>
+</body>
+</html>

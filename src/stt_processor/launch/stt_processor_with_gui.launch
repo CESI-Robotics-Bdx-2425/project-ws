@@ -1,3 +1,4 @@
 <launch>
     <node name="SttProcessor" pkg="stt_processor" type="RealtimeTranscriber.py" output="screen" />
+    <include file="$(find webserver)/launch/webserver.launch" />   
 </launch>

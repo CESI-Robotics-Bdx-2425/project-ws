@@ -139,7 +139,7 @@ class TableDetector:
 
         size_x = abs(positions[0].pose.position.x - positions[1].pose.position.x) + 0.7
         size_y = abs(positions[0].pose.position.y - positions[1].pose.position.y) + 0.1
-        size_z = 0.75
+        size_z = 0.9
 
         box_pose = PoseStamped()
         box_pose.header.frame_id = "base_link"
@@ -155,6 +155,7 @@ class TableDetector:
         quat = (R.from_quat(quat) * R.from_quat(z_rotation)).as_quat()
         o.x, o.y, o.z, o.w = quat
         box_pose.pose.orientation = o
+        box_pose.pose.orientation.y = 0
 
 
         # Add marker at Aruco Positions

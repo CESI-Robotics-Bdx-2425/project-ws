@@ -1,0 +1,10 @@
+<launch>
+    <!-- Lancement du nœud TableDetector -->
+    <node name="TableDetector" pkg="table_detector" type="TableDetector.py" output="screen" />
+
+    <!-- Lancement de RViz avec un fichier de configuration -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find table_detector)/config/table_visu.rviz" output="screen">
+        <!-- Ajouter des paramètres spécifiques si nécessaire -->
+        <param name="use_sim_time" value="false"/>
+    </node>
+</launch>

@@ -17,16 +17,6 @@ from scipy.spatial.transform import Rotation as R
 ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_1000)
 DETECTOR_PARAMETERS = cv2.aruco.DetectorParameters()
 
-# Camera calibration parameters
-D = np.array([0.03428809964086624, -0.11761127959914759, -0.004087049185391351, 0.00022993438231999193, 0.0])
-K = np.array([
-    522.0592726819208, 0.0, 327.1122193418259,
-    0.0, 522.1943972439309, 228.49840496340164,
-    0.0, 0.0, 1.0
-]).reshape((3, 3))
-
-# Constants
-
 class TableDetector:
     def __init__(self):
         self.bridge = CvBridge()
@@ -44,6 +34,10 @@ class TableDetector:
         # Initialize ROS node
         rospy.init_node('table_detector')
         rospy.loginfo('TableDetector node initialized')
+        rospy.sleep(2)
+        
+        # Init all params
+        self.init_params()
 
         # Publishers and subscribers
         self.head_pub = rospy.Publisher('/head_controller/command', JointTrajectory, queue_size=10)
@@ -51,6 +45,7 @@ class TableDetector:
         rospy.Subscriber("/xtion/rgb/image_rect_color", Image, self.image_callback, queue_size=10)
         rospy.Subscriber("/xtion/depth/image_rect", Image, self.depth_callback, queue_size=10)
         self.marker_pub = rospy.Publisher('/visualization_marker', Marker, queue_size=10)
+
 
         # TF Listener
         self.tf_listener = tf.TransformListener()
@@ -68,14 +63,22 @@ class TableDetector:
         rospy.spin()
 
     def init_params(self):
-        self.ARUCO_TARGET_IDS = rospy.get_param('aruco_target_id')  # Target markers to detect
-        self.MARKER_LENGTH = rospy.get_param('marker_length')  # Marker size in meters
-        
-        # Charger toute la structure
-        calibration_data = rospy.get_param("pal_camera_calibration_intrinsics")
-        rgb_camera = calibration_data['pal_camera_calibration_intrinsics']['rgb_xtion']
-        self.K = rgb_camera['camera_matrix']['data']
-        self.D = rgb_camera['distortion_coefficients']['data']
+        try:
+            self.ARUCO_TARGET_IDS = rospy.get_param('~aruco_target_id', default=[1, 4])  # Target markers to detect
+            self.MARKER_LENGTH = rospy.get_param('~marker_length', default=0.04)  # Marker size in meters
+            
+            # Charger toute la structure
+            calibration_data = rospy.get_param("~pal_camera_calibration_intrinsics")
+            rgb_camera = calibration_data['rgb_xtion']
+            self.K = np.array(rgb_camera['camera_matrix']['data']).reshape((3, 3))
+            self.D = np.array(rgb_camera['distortion_coefficients']['data'])
+            
+            print("Camera matrix:", self.K)
+            print("Distortion coefficients:", self.D)
+            
+        except KeyError as e:
+            rospy.logerr(f"Paramètre manquant : {e}")
+            raise
 
     def depth_callback(self, ros_image):
         try:

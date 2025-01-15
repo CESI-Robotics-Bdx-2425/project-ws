@@ -26,7 +26,6 @@ K = np.array([
 ]).reshape((3, 3))
 
 # Constants
-MARKER_LENGTH = 0.04  # Marker size in meters
 
 class TableDetector:
     def __init__(self):
@@ -34,8 +33,7 @@ class TableDetector:
         self.depth_image = None
         self.cam_image = None
         self.aruco_detected = False
-        self.detected_positions = []
-        self.ARUCO_TARGET_IDS = [4, 1]  # Target markers to detect
+        self.detected_positions = []        
 
         # Head movement configuration
         self.head_trajectory = JointTrajectory()
@@ -69,6 +67,16 @@ class TableDetector:
 
         rospy.spin()
 
+    def init_params(self):
+        self.ARUCO_TARGET_IDS = rospy.get_param('aruco_target_id')  # Target markers to detect
+        self.MARKER_LENGTH = rospy.get_param('marker_length')  # Marker size in meters
+        
+        # Charger toute la structure
+        calibration_data = rospy.get_param("pal_camera_calibration_intrinsics")
+        rgb_camera = calibration_data['pal_camera_calibration_intrinsics']['rgb_xtion']
+        self.K = rgb_camera['camera_matrix']['data']
+        self.D = rgb_camera['distortion_coefficients']['data']
+
     def depth_callback(self, ros_image):
         try:
             self.depth_image = self.bridge.imgmsg_to_cv2(ros_image, desired_encoding='passthrough')
@@ -93,7 +101,7 @@ class TableDetector:
                 if marker_id in self.ARUCO_TARGET_IDS:
                     rospy.loginfo(f"Detected marker {marker_id}")
 
-                    rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corner, MARKER_LENGTH, K, D)
+                    rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corner, self.MARKER_LENGTH, self.K, self.D)
                     transformed_point = self.transform_to_frame(tvec, rvec)
 
                     if transformed_point:

@@ -11,6 +11,7 @@ from moveit_commander import PlanningSceneInterface, RobotCommander
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import String
 from std_srvs.srv import Empty, EmptyResponse
+import table_detector.srv as c_srv
 from scipy.spatial.transform import Rotation as R
 
 # Define ArUco dictionary and parameters
@@ -30,6 +31,7 @@ class TableDetector:
         self.head_trajectory.joint_names = ['head_1_joint', 'head_2_joint']
         self.current_position = 0.0
         self.direction_multiplier = 1
+        self.scan_count = 0
 
         # Initialize ROS node
         rospy.init_node('table_detector')
@@ -50,7 +52,7 @@ class TableDetector:
         self.scene.remove_world_object()
         rospy.sleep(2)
 
-        self.s = rospy.Service('table_detector', Empty, self.scan_head)
+        self.s = rospy.Service('table_detector', c_srv.TableDetector, self.scan_head)
 
         rospy.spin()
 
@@ -58,6 +60,7 @@ class TableDetector:
         try:
             self.ARUCO_TARGET_IDS = rospy.get_param('~aruco_target_id', default=[1, 4])  # Target markers to detect
             self.MARKER_LENGTH = rospy.get_param('~marker_length', default=0.04)  # Marker size in meters
+            self.scan_limit = rospy.get_param('~scan_limit', default=5) # Limit of scan to perform
             
             # Charger toute la structure
             calibration_data = rospy.get_param("~pal_camera_calibration_intrinsics")
@@ -210,6 +213,12 @@ class TableDetector:
             elif self.current_position < -1.24:
                 self.current_position = -1.24
                 self.direction_multiplier = 1
+                self.scan_count += 1
+                
+            print(self.scan_count)
+                
+            if self.scan_count == self.scan_limit:
+                return -1
 
             head_point = JointTrajectoryPoint()
             head_point.positions = [self.current_position, -0.6]
@@ -225,7 +234,7 @@ class TableDetector:
         self.depth_sub.unregister()
         self.marker_pub.unregister()
         
-        return EmptyResponse()
+        return 1
 
 if __name__ == "__main__":
     try:

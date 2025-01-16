@@ -1,16 +1,95 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Transcription en temps réel</title>
-    <script src="https://cdn.jsdelivr.net/npm/roslib/build/roslib.min.js"></script>
-    <meta charset="utf-8" />
-</head>
-<body>
-    <h1>Transcription en temps réel</h1>
-    <div id="status">Status: Déconnecté</div>
-    <div id="transcription"></div>
-</body>
+<html lang="fr">
+    <head>
+        <meta charset="utf-8" />
+        <title>Transcription en temps réel</title>
+        <script src="https://cdn.jsdelivr.net/npm/roslib/build/roslib.min.js"></script>
+    </head>
+    <body>
+        <h1>Transcription en temps réel</h1>
+        <div id="status">Status: Déconnecté</div>
+        <div id="transcription"></div>
+    </body>
 </html>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Variables globales pour l'affichage
+        const transcriptionDiv = document.getElementById('transcription');
+        const statusDiv = document.getElementById('status');
+        let partialSpan = null;
+        let previousFinalSpan = null;
+        let currentFinalSpan = null;
+
+        // Connexion au serveur ROSBridge
+        const ros = new ROSLIB.Ros({
+            url: `ws://${window.location.hostname}:9090`
+        });
+
+        // Gestion des événements ROS
+        ros.on('connection', () => {
+            console.log('Connecté au serveur ROSBridge');
+            statusDiv.textContent = 'Status: Connecté';
+            statusDiv.style.backgroundColor = '#e6ffe6';
+        });
+
+        ros.on('error', (error) => {
+            console.error('Erreur de connexion à ROS:', error);
+            statusDiv.textContent = 'Status: Erreur de connexion';
+            statusDiv.style.backgroundColor = '#ffe6e6';
+        });
+
+        ros.on('close', () => {
+            console.warn('Connexion au serveur ROSBridge fermée.');
+            statusDiv.textContent = 'Status: Déconnecté';
+            statusDiv.style.backgroundColor = '#fff3cd';
+        });
+
+        // Création des abonnements aux topics
+        const partialTopic = new ROSLIB.Topic({
+            ros: ros,
+            name: '/stt/partial',
+            messageType: 'std_msgs/String'
+        });
+
+        const fullTopic = new ROSLIB.Topic({
+            ros: ros,
+            name: '/stt/full',
+            messageType: 'std_msgs/String'
+        });
+
+        // Gestion des messages partiels
+        partialTopic.subscribe((message) => {
+            if (!partialSpan) {
+                partialSpan = document.createElement('span');
+                partialSpan.className = 'partial';
+                transcriptionDiv.appendChild(partialSpan);
+            }
+            partialSpan.textContent = message.data;
+        });
+
+        // Gestion des messages finaux
+        fullTopic.subscribe((message) => {
+            if (partialSpan) {
+                partialSpan.remove();
+                partialSpan = null;
+            }
+
+            if (currentFinalSpan) {
+                if (previousFinalSpan) {
+                    previousFinalSpan.remove();
+                }
+                previousFinalSpan = currentFinalSpan;
+                previousFinalSpan.className = 'previous-final';
+            }
+
+            currentFinalSpan = document.createElement('span');
+            currentFinalSpan.className = 'final';
+            currentFinalSpan.textContent = message.data;
+            transcriptionDiv.appendChild(currentFinalSpan);
+        });
+    });
+</script>
 
 <style>
     body {
@@ -56,104 +135,3 @@
         font-size: 32px;
     }
 </style>
-
-<script>
-    // Variables globales pour l'affichage
-    const transcriptionDiv = document.getElementById('transcription');
-    const statusDiv = document.getElementById('status');
-    let partialSpan = null;
-    let previousFinalSpan = null;
-    let currentFinalSpan = null;
-
-    const ros = new ROSLIB.Ros({
-        url: `ws://${window.location.hostname}:9090`
-    });
-
-    ros.on('connection', () => {
-        console.log('Connecté au serveur ROSBridge');
-        statusDiv.textContent = 'Status: Connecté';
-        statusDiv.style.backgroundColor = '#e6ffe6';
-    });
-
-    ros.on('error', (error) => {
-        console.error('Erreur de connexion à ROS:', error);
-        statusDiv.textContent = 'Status: Erreur de connexion';
-        statusDiv.style.backgroundColor = '#ffe6e6';
-    });
-
-    ros.on('close', () => {
-        console.warn('Connexion au serveur ROSBridge fermée.');
-        statusDiv.textContent = 'Status: Déconnecté';
-        statusDiv.style.backgroundColor = '#fff3cd';
-    });
-
-
-    // Connexion au serveur ROSBridge
-    /*
-    const ros = new ROSLIB.Ros({
-        url: 'ws://10.68.0.129:9090' // Adresse du serveur ROSBridge
-    });
-
-    // Gestion des événements ROS
-    ros.on('connection', () => {
-        statusDiv.textContent = 'Status: Connecté';
-        statusDiv.style.backgroundColor = '#e6ffe6';
-    });
-
-    ros.on('error', (error) => {
-        console.error('Erreur de connexion à ROS:', error);
-        statusDiv.textContent = 'Status: Erreur de connexion';
-        statusDiv.style.backgroundColor = '#ffe6e6';
-    });
-
-    ros.on('close', () => {
-        statusDiv.textContent = 'Status: Déconnecté';
-        statusDiv.style.backgroundColor = '#fff3cd';
-    });
-
-    */
-
-    // Création des abonnements aux topics
-    const partialTopic = new ROSLIB.Topic({
-        ros: ros,
-        name: '/stt/partial',
-        messageType: 'std_msgs/String'
-    });
-
-    const fullTopic = new ROSLIB.Topic({
-        ros: ros,
-        name: '/stt/full',
-        messageType: 'std_msgs/String'
-    });
-
-    // Gestion des messages partiels
-    partialTopic.subscribe((message) => {
-        if (!partialSpan) {
-            partialSpan = document.createElement('span');
-            partialSpan.className = 'partial';
-            transcriptionDiv.appendChild(partialSpan);
-        }
-        partialSpan.textContent = message.data;
-    });
-
-    // Gestion des messages finaux
-    fullTopic.subscribe((message) => {
-        if (partialSpan) {
-            partialSpan.remove();
-            partialSpan = null;
-        }
-
-        if (currentFinalSpan) {
-            if (previousFinalSpan) {
-                previousFinalSpan.remove();
-            }
-            previousFinalSpan = currentFinalSpan;
-            previousFinalSpan.className = 'previous-final';
-        }
-
-        currentFinalSpan = document.createElement('span');
-        currentFinalSpan.className = 'final';
-        currentFinalSpan.textContent = message.data;
-        transcriptionDiv.appendChild(currentFinalSpan);
-    });
-</script>

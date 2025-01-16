@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find table_detector)/launch/table_detector.launch" /> 
+    <node name="StateMachine" pkg="state_machine" type="StateMachine.py" output="screen" />
+</launch>

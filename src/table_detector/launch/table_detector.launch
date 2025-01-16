@@ -1,7 +1,7 @@
 <launch>
     <arg name="marker_length" default="0.04" />
     <arg name="aruco_target_id" default="[1, 4]" />
-    <arg name="scan_limit" default="5" />
+    <arg name="scan_limit" default="1" />
 
     <node name="TableDetector" pkg="table_detector" type="TableDetector.py" output="screen">
         <param name="marker_length" value="$(arg marker_length)" />

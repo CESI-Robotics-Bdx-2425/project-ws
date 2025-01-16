@@ -4,56 +4,24 @@ import smach
 import smach_ros
 from std_srvs.srv import Empty
 from std_msgs.msg import String
+from StateScanTable import TableScanState
+from StateScanBook import BookScanState
+
 
 class StartState(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['scan'])
+        smach.State.__init__(self, outcomes=['scanTable'])
     
     def execute(self, userdata):
         rospy.loginfo("Etat de départ : Passage à l'état Scan.")
-        return 'scan'
+        return 'scanTable'
+ 
 
-class ScanState(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['idle'])
-        self.service_name = 'table_detector'
-
-    def execute(self, userdata):
-        rospy.loginfo("Etat Scan : Appel au service 'table_detector'.")
-        
-        # Attendre que le service soit disponible
-        rospy.wait_for_service(self.service_name)
-        
-        try:
-            # Créer un client de service et appeler le service
-            scan_table = rospy.ServiceProxy(self.service_name, Empty)
-            scan_table()
-            rospy.loginfo("Etat Scan : Réponse du service reçue, passage à l'état Idle.")
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Erreur lors de l'appel au service 'table_detector' : {e}")
-            return "scan"
-        
-        self.service_name = 'book_detector'
-        
-        # Attendre que le service soit disponible
-        rospy.wait_for_service(self.service_name)
-        
-        try:
-            # Créer un client de service et appeler le service
-            scan_book = rospy.ServiceProxy(self.service_name, Empty)
-            scan_book()
-            rospy.loginfo("Etat Scan : Réponse du service reçue, passage à l'état Idle.")
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Erreur lors de l'appel au service 'table_detector' : {e}")
-            "return scan"
-
-        
-
-class IdleState(smach.State):
+class ListenState(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['move'])
         # Abonnement pour attendre un message sur /idle_topic
-        self.subscriber = rospy.Subscriber('/idle_topic', String, self.idle_callback)
+        self.subscriber = rospy.Subscriber('/idle_topic', String, self.listen_callback)
 
     def execute(self, userdata):
         self.message_received = False
@@ -66,7 +34,7 @@ class IdleState(smach.State):
         rospy.loginfo("Etat Idle : Message reçu, passage à l'état Move.")
         return 'move'  # Passage à l'état Move une fois le message reçu
 
-    def idle_callback(self, msg):
+    def listen_callback(self, msg):
         # Callback appelé lorsque le message est reçu
         rospy.loginfo(f"Message reçu sur /idle_topic : {msg.data}")
         self.message_received = True
@@ -89,9 +57,10 @@ def main():
     sm = smach.StateMachine(outcomes=['DONE'])
     
     with sm:
-        smach.StateMachine.add('START', StartState(), transitions={'scan': 'SCAN'})
-        smach.StateMachine.add('SCAN', ScanState(), transitions={'idle': 'IDLE','scan': 'SCAN'})
-        smach.StateMachine.add('IDLE', IdleState(), transitions={'move': 'MOVE'})
+        smach.StateMachine.add('START', StartState(), transitions={'scanTable': 'SCANTABLE'})
+        smach.StateMachine.add('SCANTABLE', TableScanState(), transitions={'scanBook': 'SCANBOOK','scanTable': 'SCANTABLE'})
+        smach.StateMachine.add('SCANBOOK', TableScanState(), transitions={'listen': 'LISTEN','scanBook': 'SCANBOOK'})
+        smach.StateMachine.add('LISTEN', ListenState(), transitions={'move': 'MOVE'})
         smach.StateMachine.add('MOVE', MoveState(), transitions={'idle': 'IDLE'})
 
     # Activer le serveur d'introspection SMACH

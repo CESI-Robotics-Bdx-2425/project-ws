@@ -1,0 +1,8 @@
+<launch>
+    <arg name="marker_length" default="0.04" />
+
+    <node name="BookDetector" pkg="book_detector" type="ArucoDetector.py" output="screen">
+        <param name="marker_length" value="$(arg marker_length)" />
+        <rosparam file="$(find book_detector)/config/master_calibration.yaml" />
+    </node>
+</launch>

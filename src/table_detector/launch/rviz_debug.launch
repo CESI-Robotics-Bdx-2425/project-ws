@@ -1,6 +1,6 @@
 <launch>
     <!-- Lancement du nœud TableDetector -->
-    <node name="TableDetector" pkg="table_detector" type="TableDetector.py" output="screen" />
+    <include file="$(find table_detector)/launch/table_detector.launch"/>
 
     <!-- Lancement de RViz avec un fichier de configuration -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find table_detector)/config/table_visu.rviz" output="screen">

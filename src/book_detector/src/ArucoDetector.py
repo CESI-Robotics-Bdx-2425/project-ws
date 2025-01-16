@@ -7,6 +7,7 @@ import numpy as np
 import tf
 from geometry_msgs.msg import PoseStamped
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from book_detector.srv import FindAruco
 from scipy.spatial.transform import Rotation as R
 
 # Define aruco dictionary
@@ -33,7 +34,6 @@ book_offsets = {
     1: {'x': 0.100, 'y': 0.105, 'z': 0.149},
     2: {'x': 0.160, 'y': 0.105, 'z': 0.149},
 }
-ARUCO_BOOK_MARKERS = [0, 3, 2]
 
 class ArucoDetector:
     def __init__(self):
@@ -53,21 +53,39 @@ class ArucoDetector:
         self.rate = rospy.Rate(10)
         self.head_trajectory = JointTrajectory()
         self.head_trajectory.joint_names = ['head_1_joint', 'head_2_joint']
-        head_point = JointTrajectoryPoint()
-        head_point.positions = [0, -1]
-        head_point.time_from_start = rospy.Duration(0.5)
+        self.head_point = JointTrajectoryPoint()
+        self.head_point.positions = [0, -1]
+        self.head_point.time_from_start = rospy.Duration(0.5)
+        self.head_trajectory.points = [self.head_point]
 
-        self.head_trajectory.points = [head_point]
+        # Initialisation du service
+        self.service = rospy.Service('book_detector', FindAruco, self.start_search)
+        rospy.sleep(2)
+        rospy.spin()
 
+    def start_search(self, req):
         # Create subscribers for images
-        rospy.Subscriber("/xtion/rgb/image_rect_color", Image, self.image_callback, queue_size=10)
-        rospy.Subscriber("/xtion/depth/image_rect", Image, self.depth_callback, queue_size=10)
+        self.aruco_to_find = req.aruco_id
+        self.aruco_position = None
+        
+        self.image_sub = rospy.Subscriber("/xtion/rgb/image_rect_color", Image, self.image_callback, queue_size=10)
+        self.depth_sub = rospy.Subscriber("/xtion/depth/image_rect", Image, self.depth_callback, queue_size=10)
         self.head_pub = rospy.Publisher('/head_controller/command', JointTrajectory, queue_size=10)
         rospy.sleep(2)
         
+        # Set head in position
         self.head_pub.publish(self.head_trajectory)
         self.rate.sleep()
-        rospy.spin()
+        
+        while self.aruco_position == None:
+            rospy.sleep(0.1)
+        
+        self.image_sub.unregister()
+        self.depth_sub.unregister()
+        self.head_pub.unregister()
+        cv2.destroyAllWindows()
+        return self.aruco_position
+
 
     def depth_callback(self, ros_image):
         try:
@@ -103,7 +121,7 @@ class ArucoDetector:
         corners, ids, _ = cv2.aruco.detectMarkers(self.cam_image, aruco_dict, parameters=parameters)
         if ids is not None:
             for corner, id in zip(corners, ids):
-                if id in ARUCO_BOOK_MARKERS:
+                if id == self.aruco_to_find:
                     # Estimate position of Aruco
                     rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corner, marker_length, K, D)
 
@@ -128,15 +146,17 @@ class ArucoDetector:
                     transform_point.pose.position.y += book_offsets[0]['y']
                     transform_point.pose.position.z += book_offsets[0]['z']
                     
-                    print(transform_point)
+                    self.aruco_position = transform_point
                     #print(f"Position (m): X={point_transformed[0]:.3f}, Y={point_transformed[1]:.3f}, Z={point_transformed[2]:.3f}")
 
             # Draw the detected Aruco
             cv2.aruco.drawDetectedMarkers(self.cam_image, corners)
 
         try:
-            cv2.imshow('RGB Camera', self.cam_image)
-            cv2.imshow('Depth Camera', self.depth_image)
+            if self.cam_image is not None:
+                cv2.imshow('RGB Camera', self.cam_image)
+            if self.depth_image is not None:
+                cv2.imshow('Depth Camera', self.depth_image)
             cv2.waitKey(1)
         except Exception as e:
             raise

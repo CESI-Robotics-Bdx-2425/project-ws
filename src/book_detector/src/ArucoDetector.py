@@ -14,21 +14,6 @@ from scipy.spatial.transform import Rotation as R
 aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_1000)
 parameters = cv2.aruco.DetectorParameters()
 
-# Camera calibration matrix
-D = np.array([0.03428809964086624, -0.11761127959914759, -0.004087049185391351, 0.00022993438231999193, 0.0])
-K = np.array(
-    [522.0592726819208, 0.0, 327.1122193418259, 0.0, 522.1943972439309, 228.49840496340164, 0.0, 0.0, 1.0]
-).reshape((3, 3))
-
-# Set coordinates system
-marker_length = 0.04
-obj_points = np.array([
-    [-marker_length / 2, marker_length / 2, 0],
-    [marker_length / 2, marker_length / 2, 0],
-    [marker_length / 2, -marker_length / 2, 0],
-    [-marker_length / 2, -marker_length / 2, 0]
-], dtype=np.float32)
-
 book_offsets = {
     0: {'x': 0.040, 'y': 0.105, 'z': 0.149},
     1: {'x': 0.100, 'y': 0.105, 'z': 0.149},
@@ -53,15 +38,33 @@ class ArucoDetector:
         self.rate = rospy.Rate(10)
         self.head_trajectory = JointTrajectory()
         self.head_trajectory.joint_names = ['head_1_joint', 'head_2_joint']
-        self.head_point = JointTrajectoryPoint()
-        self.head_point.positions = [0, -1]
-        self.head_point.time_from_start = rospy.Duration(0.5)
-        self.head_trajectory.points = [self.head_point]
+        
+        # Variables for head scanning
+        self.current_position = 0.0
+        self.direction_multiplier = 1
+        
+        self.init_params()
 
         # Initialisation du service
         self.service = rospy.Service('book_detector', FindAruco, self.start_search)
         rospy.sleep(2)
         rospy.spin()
+        
+    def init_params(self):
+        try:
+            self.MARKER_LENGTH = rospy.get_param('~marker_length', default=0.04)  # Marker size in meters
+            
+            # Charger toute la structure
+            calibration_data = rospy.get_param("~pal_camera_calibration_intrinsics")
+            rgb_camera = calibration_data['rgb_xtion']
+            self.K = np.array(rgb_camera['camera_matrix']['data']).reshape((3, 3))
+            self.D = np.array(rgb_camera['distortion_coefficients']['data'])
+            
+            print("Camera matrix:", self.K)
+            print("Distortion coefficients:", self.D)
+        except KeyError as e:
+            rospy.logerr(f"Paramètre manquant : {e}")
+            raise
 
     def start_search(self, req):
         # Create subscribers for images
@@ -72,13 +75,28 @@ class ArucoDetector:
         self.depth_sub = rospy.Subscriber("/xtion/depth/image_rect", Image, self.depth_callback, queue_size=10)
         self.head_pub = rospy.Publisher('/head_controller/command', JointTrajectory, queue_size=10)
         rospy.sleep(2)
-        
-        # Set head in position
-        self.head_pub.publish(self.head_trajectory)
-        self.rate.sleep()
-        
-        while self.aruco_position == None:
-            rospy.sleep(0.1)
+
+        # Scan with head until Aruco is found
+        while not rospy.is_shutdown() and self.aruco_position is None:
+            # Update head position for scanning
+            self.current_position += 0.02 * self.direction_multiplier
+
+            # Check boundaries and change direction if needed
+            if self.current_position > 1.24:
+                self.current_position = 1.24
+                self.direction_multiplier = -1
+            elif self.current_position < -1.24:
+                self.current_position = -1.24
+                self.direction_multiplier = 1
+
+            # Create and publish head movement
+            head_point = JointTrajectoryPoint()
+            head_point.positions = [self.current_position, -1]
+            head_point.time_from_start = rospy.Duration(0.5)
+            self.head_trajectory.points = [head_point]
+            self.head_pub.publish(self.head_trajectory)
+            
+            self.rate.sleep()
         
         self.image_sub.unregister()
         self.depth_sub.unregister()
@@ -123,7 +141,7 @@ class ArucoDetector:
             for corner, id in zip(corners, ids):
                 if id == self.aruco_to_find:
                     # Estimate position of Aruco
-                    rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corner, marker_length, K, D)
+                    rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corner, self.MARKER_LENGTH, self.K, self.D)
 
                     transform_point = self.transform_to_frame(tvec, rvec)
 

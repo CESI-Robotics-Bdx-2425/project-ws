@@ -6,6 +6,8 @@ from std_srvs.srv import Empty
 from std_msgs.msg import String
 from StateScanTable import TableScanState
 from StateScanBook import BookScanState
+from StateListen import ListenState
+from ErrorState import ErrorState
 
 
 class StartState(smach.State):
@@ -15,29 +17,6 @@ class StartState(smach.State):
     def execute(self, userdata):
         rospy.loginfo("Etat de départ : Passage à l'état Scan.")
         return 'scanTable'
- 
-
-class ListenState(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['move'])
-        # Abonnement pour attendre un message sur /idle_topic
-        self.subscriber = rospy.Subscriber('/idle_topic', String, self.listen_callback)
-
-    def execute(self, userdata):
-        self.message_received = False
-        rospy.loginfo("Etat Idle : En attente de message sur /idle_topic.")
-        
-        # Rester dans cet état tant qu'on n'a pas reçu de message
-        while not self.message_received:
-            rospy.sleep(0.1)
-        
-        rospy.loginfo("Etat Idle : Message reçu, passage à l'état Move.")
-        return 'move'  # Passage à l'état Move une fois le message reçu
-
-    def listen_callback(self, msg):
-        # Callback appelé lorsque le message est reçu
-        rospy.loginfo(f"Message reçu sur /idle_topic : {msg.data}")
-        self.message_received = True
 
 class MoveState(smach.State):
     def __init__(self):
@@ -54,14 +33,15 @@ def main():
     rospy.init_node("state_machine_example")
 
     # Créer la machine d'état
-    sm = smach.StateMachine(outcomes=['DONE'])
+    sm = smach.StateMachine(outcomes=['DONE','EXIT'])
     
     with sm:
         smach.StateMachine.add('START', StartState(), transitions={'scanTable': 'SCANTABLE'})
-        smach.StateMachine.add('SCANTABLE', TableScanState(), transitions={'scanBook': 'SCANBOOK','scanTable': 'SCANTABLE'})
-        smach.StateMachine.add('SCANBOOK', TableScanState(), transitions={'listen': 'LISTEN','scanBook': 'SCANBOOK'})
+        smach.StateMachine.add('SCANTABLE', TableScanState(), transitions={'scanBook': 'SCANBOOK','scanTable': 'SCANTABLE', 'error':'ERROR'})
+        smach.StateMachine.add('SCANBOOK', BookScanState(), transitions={'listen': 'LISTEN','scanBook': 'SCANBOOK', 'error':'ERROR'})
         smach.StateMachine.add('LISTEN', ListenState(), transitions={'move': 'MOVE'})
-        smach.StateMachine.add('MOVE', MoveState(), transitions={'idle': 'IDLE'})
+        smach.StateMachine.add('MOVE', MoveState(), transitions={'listen': 'LISTEN'})
+        smach.StateMachine.add('ERROR', ErrorState(previous_state_name='UNKNOWN'), transitions={'exit': 'EXIT'})
 
     # Activer le serveur d'introspection SMACH
     sis = smach_ros.IntrospectionServer('smach_server', sm, '/SM_ROOT')

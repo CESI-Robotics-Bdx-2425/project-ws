@@ -39,14 +39,6 @@ class TableDetector:
         # Init all params
         self.init_params()
 
-        # Publishers and subscribers
-        self.head_pub = rospy.Publisher('/head_controller/command', JointTrajectory, queue_size=10)
-        self.result_pub = rospy.Publisher('/table_detector/result', String, queue_size=10)
-        rospy.Subscriber("/xtion/rgb/image_rect_color", Image, self.image_callback, queue_size=10)
-        rospy.Subscriber("/xtion/depth/image_rect", Image, self.depth_callback, queue_size=10)
-        self.marker_pub = rospy.Publisher('/visualization_marker', Marker, queue_size=10)
-
-
         # TF Listener
         self.tf_listener = tf.TransformListener()
 
@@ -201,6 +193,13 @@ class TableDetector:
     def scan_head(self, _):
         rate = rospy.Rate(10)
         self.reset()
+        
+        # Publishers and subscribers
+        self.head_pub = rospy.Publisher('/head_controller/command', JointTrajectory, queue_size=10)
+        self.result_pub = rospy.Publisher('/table_detector/result', String, queue_size=10)
+        self.image_sub = rospy.Subscriber("/xtion/rgb/image_rect_color", Image, self.image_callback, queue_size=10)
+        self.depth_sub = rospy.Subscriber("/xtion/depth/image_rect", Image, self.depth_callback, queue_size=10)
+        self.marker_pub = rospy.Publisher('/visualization_marker', Marker, queue_size=10)
 
         while not rospy.is_shutdown() and not self.aruco_detected:
             self.current_position += 0.02 * self.direction_multiplier
@@ -219,6 +218,12 @@ class TableDetector:
             self.head_trajectory.points = [head_point]
             self.head_pub.publish(self.head_trajectory)
             rate.sleep()
+        
+        self.head_pub.unregister()
+        self.result_pub.unregister()
+        self.image_sub.unregister()
+        self.depth_sub.unregister()
+        self.marker_pub.unregister()
         
         return EmptyResponse()
 

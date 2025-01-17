@@ -33,6 +33,7 @@ class BookScanState(smach.State):
                 r = scan_book(int(aruco_id))
                 rospy.sleep(3)
                 rospy.loginfo("Etat Scan : Réponse du service reçue, passage à l'état Listen.")
+            self.tts.say("Les 3 flyers sont bien présents dans mon environnement")
             return "idle"
 
         except rospy.ServiceException as e:

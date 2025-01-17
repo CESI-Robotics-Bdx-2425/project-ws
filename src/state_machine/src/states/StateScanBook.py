@@ -6,7 +6,7 @@ from utils.TTS import TextToSpeech
 
 class BookScanState(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['idle'])
+        smach.State.__init__(self, outcomes=['idle'],input_keys=['sm_previous_state'],output_keys=['sm_previous_state'])
         self.service_name = 'book_detector'
         self.error_count = 0  # Initialiser le compteur d'erreurs
         self.tts = TextToSpeech()
@@ -19,7 +19,7 @@ class BookScanState(smach.State):
 
     def execute(self, userdata):
         rospy.loginfo("Etat Scan : Appel au service 'book_detector'.")
-        
+        userdata.sm_previous_state = 'Scan Book'
         # Attendre que le service soit disponible
         rospy.wait_for_service(self.service_name)
 

@@ -4,7 +4,7 @@ import smach
 from table_detector.srv import TableDetector
 from utils.TTS import TextToSpeech
 
-class TableScanState(smach.State):
+class ScanTableState(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['scanBook', 'error'])
         self.service_name = 'table_detector'
@@ -26,6 +26,7 @@ class TableScanState(smach.State):
             else:
                 self.TTS.say("Table détéctée. Environnement mis à jour !")
                 
+            rospy.sleep(3)
             rospy.loginfo("Etat Scan : Réponse du service reçue, passage à l'état Idle.")
             return "scanBook"
         except rospy.ServiceException as e:

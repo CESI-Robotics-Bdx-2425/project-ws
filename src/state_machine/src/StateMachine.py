@@ -6,8 +6,9 @@ from std_srvs.srv import Empty
 from std_msgs.msg import String
 
 from states.IdleState import IdleState
-from states.ScanTableState import TableScanState
+from states.ScanTableState import ScanTableState
 from states.StartState import StartState
+from states.StateScanBook import BookScanState
 
 def main():
     rospy.init_node("state_machine_example")
@@ -17,7 +18,8 @@ def main():
     
     with sm:
         smach.StateMachine.add('START', StartState(), transitions={'scanTable': 'SCANTABLE'})
-        smach.StateMachine.add('SCANTABLE', TableScanState(), transitions={'scanBook': 'IDLE', 'error':'IDLE'})
+        smach.StateMachine.add('SCANTABLE', ScanTableState(), transitions={'scanBook': 'SCANBOOK', 'error':'IDLE'})
+        smach.StateMachine.add('SCANBOOK', BookScanState(), transitions={'idle': 'IDLE'})
         smach.StateMachine.add('IDLE', IdleState(), transitions={})
 
     # Activer le serveur d'introspection SMACH

@@ -110,15 +110,6 @@ class TableDetector:
                         self.add_collision_box(self.detected_positions)
                         self.aruco_detected = True
 
-        # Draw markers and display images
-        if corners:
-            cv2.aruco.drawDetectedMarkers(self.cam_image, corners)
-
-        cv2.imshow('RGB Camera', self.cam_image)
-        if self.depth_image is not None:
-            cv2.imshow('Depth Camera', self.depth_image)
-        cv2.waitKey(1)
-
     def transform_to_frame(self, tvec, rvec, source_frame='xtion_rgb_optical_frame', target_frame='base_link'):
         try:
             point = PoseStamped()

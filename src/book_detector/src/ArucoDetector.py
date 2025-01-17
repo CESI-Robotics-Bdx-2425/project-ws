@@ -53,6 +53,7 @@ class ArucoDetector:
     def init_params(self):
         try:
             self.MARKER_LENGTH = rospy.get_param('~marker_length', default=0.04)  # Marker size in meters
+            self.scan_limit = rospy.get_param('~scan_limit', default=1)  # Marker size in meters
             
             # Charger toute la structure
             calibration_data = rospy.get_param("~pal_camera_calibration_intrinsics")
@@ -70,6 +71,7 @@ class ArucoDetector:
         # Create subscribers for images
         self.aruco_to_find = req.aruco_id
         self.aruco_position = None
+        self.scan_count = 0
         
         self.image_sub = rospy.Subscriber("/xtion/rgb/image_rect_color", Image, self.image_callback, queue_size=10)
         self.depth_sub = rospy.Subscriber("/xtion/depth/image_rect", Image, self.depth_callback, queue_size=10)
@@ -88,6 +90,10 @@ class ArucoDetector:
             elif self.current_position < -1.24:
                 self.current_position = -1.24
                 self.direction_multiplier = 1
+                self.scan_count += 1
+
+            if self.scan_count == self.scan_limit:
+                return PoseStamped()
 
             # Create and publish head movement
             head_point = JointTrajectoryPoint()

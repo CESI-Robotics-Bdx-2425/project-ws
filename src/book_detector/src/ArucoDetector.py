@@ -15,9 +15,9 @@ aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_1000)
 parameters = cv2.aruco.DetectorParameters()
 
 book_offsets = {
-    0: {'x': 0.040, 'y': 0.105, 'z': 0.149},
-    1: {'x': 0.100, 'y': 0.105, 'z': 0.149},
-    2: {'x': 0.160, 'y': 0.105, 'z': 0.149},
+    0: {'x': 0, 'y': 0, 'z': 0},
+    1: {'x': 0, 'y': 0, 'z': 0},
+    2: {'x': 0, 'y': 0, 'z': 0},
 }
 
 class ArucoDetector:
@@ -55,11 +55,13 @@ class ArucoDetector:
             self.MARKER_LENGTH = rospy.get_param('~marker_length', default=0.04)  # Marker size in meters
             self.scan_limit = rospy.get_param('~scan_limit', default=1)  # Marker size in meters
             
+            rospy.loginfo(f'Init with MARKER_LENGTH {self.MARKER_LENGTH}')
+            
             # Charger toute la structure
-            calibration_data = rospy.get_param("~pal_camera_calibration_intrinsics")
-            rgb_camera = calibration_data['rgb_xtion']
-            self.K = np.array(rgb_camera['camera_matrix']['data']).reshape((3, 3))
-            self.D = np.array(rgb_camera['distortion_coefficients']['data'])
+            self.matrix_file = rospy.get_param('~matrix_file')
+            self.coefficients_file = rospy.get_param('~coefficients_file')
+            self.K = np.loadtxt(self.matrix_file)
+            self.D = np.loadtxt(self.coefficients_file)
             
             print("Camera matrix:", self.K)
             print("Distortion coefficients:", self.D)
@@ -125,7 +127,7 @@ class ArucoDetector:
             rospy.logerr(f"Error while converting RGB image : {e}")
         self.aruco_callback()
 
-    def transform_to_frame(self, tvec, rvec, source_frame='xtion_rgb_optical_frame', target_frame='base_link'):
+    def transform_to_frame(self, tvec, rvec, source_frame='xtion_rgb_optical_frame', target_frame='odom'):
         try:
             point = PoseStamped()
             point.header.frame_id = source_frame

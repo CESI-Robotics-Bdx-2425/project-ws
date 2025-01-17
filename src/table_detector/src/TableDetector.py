@@ -63,10 +63,10 @@ class TableDetector:
             self.scan_limit = rospy.get_param('~scan_limit', default=5) # Limit of scan to perform
             
             # Charger toute la structure
-            calibration_data = rospy.get_param("~pal_camera_calibration_intrinsics")
-            rgb_camera = calibration_data['rgb_xtion']
-            self.K = np.array(rgb_camera['camera_matrix']['data']).reshape((3, 3))
-            self.D = np.array(rgb_camera['distortion_coefficients']['data'])
+            self.matrix_file = rospy.get_param('~matrix_file')
+            self.coefficients_file = rospy.get_param('~coefficients_file')
+            self.K = np.loadtxt(self.matrix_file)
+            self.D = np.loadtxt(self.coefficients_file)
             
             print("Camera matrix:", self.K)
             print("Distortion coefficients:", self.D)

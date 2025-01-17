@@ -3,10 +3,14 @@
     <arg name="aruco_target_id" default="[1, 4]" />
     <arg name="scan_limit" default="1" />
 
+    <arg name="matrix_file" default="$(find book_detector)/config/matrix.npy" />
+    <arg name="coefficients_file" default="$(find book_detector)/config/coefficients.npy" />
+
     <node name="TableDetector" pkg="table_detector" type="TableDetector.py" output="screen">
         <param name="marker_length" value="$(arg marker_length)" />
         <param name="aruco_target_id" value="$(arg aruco_target_id)" />
         <param name="scan_limit" value="$(arg scan_limit)" />
-        <rosparam file="$(find table_detector)/config/master_calibration.yaml" />
+        <param name="matrix_file" value="$(arg matrix_file)" />
+        <param name="coefficients_file" value="$(arg coefficients_file)" />
     </node>
 </launch>

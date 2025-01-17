@@ -101,7 +101,6 @@ class ArucoDetector:
         self.image_sub.unregister()
         self.depth_sub.unregister()
         self.head_pub.unregister()
-        cv2.destroyAllWindows()
         return self.aruco_position
 
 
@@ -166,18 +165,6 @@ class ArucoDetector:
                     
                     self.aruco_position = transform_point
                     #print(f"Position (m): X={point_transformed[0]:.3f}, Y={point_transformed[1]:.3f}, Z={point_transformed[2]:.3f}")
-
-            # Draw the detected Aruco
-            cv2.aruco.drawDetectedMarkers(self.cam_image, corners)
-
-        try:
-            if self.cam_image is not None:
-                cv2.imshow('RGB Camera', self.cam_image)
-            if self.depth_image is not None:
-                cv2.imshow('Depth Camera', self.depth_image)
-            cv2.waitKey(1)
-        except Exception as e:
-            raise
 
 if __name__ == "__main__":
     detector = ArucoDetector()

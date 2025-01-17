@@ -206,7 +206,6 @@ class TableDetector:
                 self.direction_multiplier = 1
                 self.scan_count += 1
                 
-            print(self.scan_count)
                 
             if self.scan_count == self.scan_limit:
                 return -1

@@ -9,18 +9,21 @@ from states.IdleState import IdleState
 from states.ScanTableState import ScanTableState
 from states.StartState import StartState
 from states.StateScanBook import BookScanState
+from states.ErrorState import ErrorState
 
 def main():
     rospy.init_node("state_machine_example")
 
     # Créer la machine d'état
     sm = smach.StateMachine(outcomes=['DONE','EXIT'])
+    sm.userdata.sm_previous_state = 'Start'
     
     with sm:
         smach.StateMachine.add('START', StartState(), transitions={'scanTable': 'SCANTABLE'})
-        smach.StateMachine.add('SCANTABLE', ScanTableState(), transitions={'scanBook': 'SCANBOOK', 'error':'IDLE'})
+        smach.StateMachine.add('SCANTABLE', ScanTableState(), transitions={'scanBook': 'SCANBOOK', 'error':'ERROR'})
         smach.StateMachine.add('SCANBOOK', BookScanState(), transitions={'idle': 'IDLE'})
         smach.StateMachine.add('IDLE', IdleState(), transitions={})
+        smach.StateMachine.add('ERROR', ErrorState(), transitions={'idle': 'IDLE'})
 
     # Activer le serveur d'introspection SMACH
     sis = smach_ros.IntrospectionServer('smach_server', sm, '/SM_ROOT')

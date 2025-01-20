@@ -16,8 +16,13 @@
                 <button id="reload-btn">Reconnexion</button>
             </div>
         </div>
+        <div id="options">
+            <button id="toggle-mic">Micro On/Off</button>
+        </div>
         <div id="transcription"></div>
-        <div id="option"></div>
+
+        <div id="anwsers"></div>
+        
         <div id="credits">© Made by A5 2024-2025</div>
 
     </body>
@@ -26,15 +31,19 @@
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Variables globales pour l'affichage
-
         const transcriptionDiv = document.getElementById('transcription');
+        const anwsersDiv = document.getElementById('anwsers');
         const statusDiv = document.getElementById('status-text');
         const reloadBtn = document.getElementById('reload-btn');
         const statusCircle = document.getElementById('circle');
+        const toggleMic = document.getElementById('toggle-mic');
 
         let partialSpan = null;
         let previousFinalSpan = null;
         let currentFinalSpan = null;
+
+        // Variable pour activer ou désactiver la transcription
+        let isSttEnabled = true;
 
         // Fonction pour afficher ou masquer le bouton Reconnexion
         const updateReloadButtonVisibility = (isConnected) => {
@@ -45,7 +54,7 @@
             }
         };
 
-        // ============================================ Fonction pour établir une connexion ROS
+        // Fonction pour établir une connexion ROS
         let ros;
 
         const connectToRos = () => {
@@ -65,15 +74,15 @@
                 console.error('Erreur de connexion à ROS:', error);
                 statusDiv.textContent = 'Status: Erreur de connexion';
                 statusCircle.style.backgroundColor = 'orange';
-                updateReloadButtonVisibility(false); // Bouton masqué
+                updateReloadButtonVisibility(false); // Bouton affiché
             });
 
             ros.on('close', () => {
                 console.warn('Connexion au serveur ROSBridge fermée.');
                 statusDiv.textContent = 'Status: Déconnecté';
-                setTimeout(connectToRos, 5000);
+                setTimeout(connectToRos, 5000); // Reconnexion automatique
                 statusCircle.style.backgroundColor = 'red';
-                updateReloadButtonVisibility(false); // Bouton masqué
+                updateReloadButtonVisibility(false); // Bouton affiché
             });
 
             // Création des abonnements aux topics
@@ -89,10 +98,34 @@
                 messageType: 'std_msgs/String'
             });
 
-            // ============================================
+            // Abonnement au topic /stt_listener_toggle
+            const toggleSttListener = new ROSLIB.Topic({
+                ros: ros,
+                name: '/tiago_interact/stt/status',
+                messageType: 'std_msgs/Bool'
+            });
 
-            // ============================================ Gestion des messages partiels
+            // Gestion des messages reçus sur /stt_listener_toggle
+            toggleSttListener.subscribe((message) => {
+                if (message.data === true) {
+                    console.log("STT activé via /tiago_interact/stt/status");
+                    isSttEnabled = true;
+                    // Afficher la transcription
+                    transcriptionDiv.style.display = 'block';
+                    anwsersDiv.style.display = 'None';
+                } else {
+                    console.log("STT désactivé via /tiago_interact/stt/status");
+                    isSttEnabled = false;
+                    // Désa ctiver et afficher les bouttons qui sont publier sur un autre topic
+                    transcriptionDiv.style.display = 'None';
+                    anwsersDiv.style.display = 'block';
+                }
+            });
+
+            // Gestion des messages partiels
             partialTopic.subscribe((message) => {
+                if (!isSttEnabled) return; // Ignorer si STT désactivé
+
                 if (!partialSpan) {
                     partialSpan = document.createElement('span');
                     partialSpan.className = 'partial';
@@ -103,6 +136,8 @@
 
             // Gestion des messages finaux
             fullTopic.subscribe((message) => {
+                if (!isSttEnabled) return; // Ignorer si STT désactivé
+
                 if (partialSpan) {
                     partialSpan.remove();
                     partialSpan = null;
@@ -121,26 +156,32 @@
                 currentFinalSpan.textContent = message.data;
                 transcriptionDiv.appendChild(currentFinalSpan);
             });
-            // ============================================
-
-            // ============================================ Gestions des questions de TIAGo++
-
-            
-
-            // ============================================
         };
 
         // Initialisation de la connexion
         connectToRos();
 
-        /* Event de reload de la page */
+        // Événement pour recharger la connexion manuellement
         reloadBtn.addEventListener('click', () => {
             connectToRos();
         });
 
-
+        toggleMic.addEventListener('click', () => {
+            // Call service : /tiago_interact/stt/toggle empty
+            const addTwoIntsService = new ROSLIB.Service({
+                ros: ros,
+                name: '/tiago_interact/stt/toggle', // Nom du service ROS
+                serviceType: 'std_srvs/empty' // Type du service
+            });
+            const request = new ROSLIB.ServiceRequest({});
+            // Appel du service
+            addTwoIntsService.callService(request, (result) => {
+                console.log('test');
+            });
+        });
     });
 </script>
+
 
 <style>
     /* Styles de base */
@@ -161,7 +202,7 @@
         max-width: 800px;
     }
 
-    header {
+    header {transcription
         background: rgba(0, 0, 0, 0.7);
         color: #fff;
         padding: 20px;
@@ -219,7 +260,7 @@
         background-color: red;
     }
 
-    #status {
+    #status, #options {
         display: flex;
         justify-content: flex-start;
         align-self: flex-start;

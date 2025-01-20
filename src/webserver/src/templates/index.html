@@ -15,6 +15,11 @@
             <div>
                 <button id="reload-btn">Reconnexion</button>
             </div>
+            <div id="settings">
+                <div>
+                    <button id="settings-btn">Settings</button>
+                </div>
+            </div>
         </div>
         <div id="options">
             <button id="toggle-mic">Micro On/Off</button>
@@ -37,6 +42,9 @@
         const reloadBtn = document.getElementById('reload-btn');
         const statusCircle = document.getElementById('circle');
         const toggleMic = document.getElementById('toggle-mic');
+        const settingsBtn = document.getElementById('settings-btn');
+        const optionsDiv = document.getElementById('options');
+        var toggleMicValue = true;
 
         let partialSpan = null;
         let previousFinalSpan = null;
@@ -167,17 +175,46 @@
         });
 
         toggleMic.addEventListener('click', () => {
-            // Call service : /tiago_interact/stt/toggle empty
-            const addTwoIntsService = new ROSLIB.Service({
-                ros: ros,
-                name: '/tiago_interact/stt/toggle', // Nom du service ROS
-                serviceType: 'std_srvs/empty' // Type du service
-            });
-            const request = new ROSLIB.ServiceRequest({});
-            // Appel du service
-            addTwoIntsService.callService(request, (result) => {
-                console.log('test');
-            });
+        // Désactiver le bouton pendant 5 secondes
+        toggleMic.disabled = true;
+
+        setTimeout(() => {
+            toggleMic.disabled = false; // Réactiver le bouton après 5 secondes
+        }, 5000);
+
+        // Bouton micro
+        console.log(toggleMicValue);
+
+        if (toggleMicValue == true) {
+            toggleMicValue = false;
+            toggleMic.style.backgroundColor = 'red';
+            toggleMic.style.color = 'white';
+        } else {
+            toggleMicValue = true;
+            toggleMic.style.backgroundColor = 'lime';
+            toggleMic.style.color = 'black';
+        }
+
+        // Appel du service : /tiago_interact/stt/toggle empty
+        const addTwoIntsService = new ROSLIB.Service({
+            ros: ros,
+            name: '/tiago_interact/stt/toggle', // Nom du service ROS
+            serviceType: 'std_srvs/empty' // Type du service
+        });
+        const request = new ROSLIB.ServiceRequest({});
+        
+        // Appel du service
+        addTwoIntsService.callService(request, (result) => {
+            console.log('Service appelé avec succès');
+        });
+        });
+
+        settingsBtn.addEventListener('click', () => {
+            if (optionsDiv.style.display === 'none') {
+                optionsDiv.style.display = 'block';  // Affiche le div
+            } else {
+                optionsDiv.style.display = 'none';   // Cache le div
+            }
         });
     });
 </script>
@@ -200,13 +237,6 @@
         overflow: hidden; /* Ajouté */
         flex: auto;
         max-width: 800px;
-    }
-
-    header {transcription
-        background: rgba(0, 0, 0, 0.7);
-        color: #fff;
-        padding: 20px;
-        text-align: center;
     }
 
     h1 {
@@ -250,7 +280,11 @@
     .partial {
         color:chartreuse;
         font-style: italic;
-        padding-left: 10px;
+        padding-left: 7px;
+    }
+
+    .final{
+        margin-left: 7px;
     }
 
     #circle {
@@ -266,6 +300,39 @@
         align-self: flex-start;
         align-items: center;
         gap: 10px;
+    }
+
+    #options {
+        display: none;
+        justify-content: center;
+        margin: 20px 0px 20px 0px;
+        padding: 10px;
+
+        /* A Voir 
+        border-radius: 10px;
+        border-style: solid;
+        border-width: 3px;
+        border-color: #00c6ff;
+        box-shadow: 5px 5px 5px #00c6ff;
+
+        /* border: solid;*/
+    }
+
+    #settings {
+        display: flex;
+        justify-content: flex-end;
+        flex: 1 1 auto;
+    }
+
+    #settings-btn{
+        color: black;
+        padding: 10px;
+        font-size: 18px;
+        background-color: lime;
+        font-weight: bold;
+
+        border-style: none;
+        border-radius: 10px;
     }
 
     #status-text {
@@ -284,6 +351,23 @@
 
         border-style: none;
         border-radius: 10px;
+    }
+
+    #toggle-mic {
+        color: black;
+        padding: 10px;
+        font-size: 18px;
+        background-color: lime;
+        font-weight: bold;
+
+        border-style: none;
+        border-radius: 10px;
+    }
+
+    #toggle-mic[disabled]{
+        cursor: not-allowed;
+        color: whitesmoke;
+        opacity: 0.7;
     }
 
     #credits {

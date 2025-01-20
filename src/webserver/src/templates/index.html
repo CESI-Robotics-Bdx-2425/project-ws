@@ -6,22 +6,48 @@
         <script src="https://cdn.jsdelivr.net/npm/roslib/build/roslib.min.js"></script>
     </head>
     <body>
-        <h1>Transcription en temps réel</h1>
-        <div id="status">Status: Déconnecté</div>
+        <div>
+            <h1>Transcription en temps réel</h1>
+        </div>
+
+        <div id="status">
+            <div id="circle"></div>
+            <div id="status-text">Status: Déconnecté</div>
+            <div>
+                <button id="reload-btn">Reconnexion</button>
+            </div>
+        </div>
+
         <div id="transcription"></div>
+
+        <div id="option"></div>
+
     </body>
 </html>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Variables globales pour l'affichage
+
         const transcriptionDiv = document.getElementById('transcription');
-        const statusDiv = document.getElementById('status');
+        const statusDiv = document.getElementById('status-text');
+        const reloadBtn = document.getElementById('reload-btn');
+        const statusCircle = document.getElementById('circle');
+
         let partialSpan = null;
         let previousFinalSpan = null;
         let currentFinalSpan = null;
 
-        // Fonction pour établir une connexion ROS
+        // Fonction pour afficher ou masquer le bouton Reconnexion
+        const updateReloadButtonVisibility = (isConnected) => {
+            if (isConnected) {
+                reloadBtn.style.display = 'none'; // Cache le bouton si connecté
+            } else {
+                reloadBtn.style.display = 'block'; // Affiche le bouton si déconnecté
+            }
+        };
+
+        // ============================================ Fonction pour établir une connexion ROS
         let ros;
         const connectToRos = () => {
             ros = new ROSLIB.Ros({
@@ -32,21 +58,23 @@
             ros.on('connection', () => {
                 console.log('Connecté au serveur ROSBridge');
                 statusDiv.textContent = 'Status: Connecté';
-                statusDiv.style.backgroundColor = '#e6ffe6';
+                statusCircle.style.backgroundColor = 'lime';
+                updateReloadButtonVisibility(true); // Bouton masqué
             });
 
             ros.on('error', (error) => {
                 console.error('Erreur de connexion à ROS:', error);
                 statusDiv.textContent = 'Status: Erreur de connexion';
-                statusDiv.style.backgroundColor = '#ffe6e6';
+                statusCircle.style.backgroundColor = 'red';
+                updateReloadButtonVisibility(false); // Bouton masqué
             });
 
             ros.on('close', () => {
                 console.warn('Connexion au serveur ROSBridge fermée.');
                 statusDiv.textContent = 'Status: Déconnecté';
-                statusDiv.style.backgroundColor = '#fff3cd';
-                // Tentative de reconnexion après 5 secondes
                 setTimeout(connectToRos, 5000);
+                statusCircle.style.backgroundColor = 'orange';
+                updateReloadButtonVisibility(false); // Bouton masqué
             });
 
             // Création des abonnements aux topics
@@ -62,7 +90,9 @@
                 messageType: 'std_msgs/String'
             });
 
-            // Gestion des messages partiels
+            // ============================================
+
+            // ============================================ Gestion des messages partiels
             partialTopic.subscribe((message) => {
                 if (!partialSpan) {
                     partialSpan = document.createElement('span');
@@ -92,54 +122,229 @@
                 currentFinalSpan.textContent = message.data;
                 transcriptionDiv.appendChild(currentFinalSpan);
             });
+            // ============================================
+
+            // ============================================ Gestions des questions de TIAGo++
+
+
+
+            // ============================================
         };
 
         // Initialisation de la connexion
         connectToRos();
+
+        reloadBtn.addEventListener('click', () => {
+            connectToRos();
+        });
     });
 </script>
 
 <style>
+    /* Styles de base */
+    html {
+        display: flex;
+        justify-content: center;
+    }
+
     body {
-        font-family: Arial, sans-serif;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-    span {
-        font-size: 24px;
-    }
-    #transcription {
-        margin: 20px 0;
-        padding: 20px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        min-height: 100px;
-        background-color: #f9f9f9;
-    }
-    #status {
-        padding: 10px;
-        margin-bottom: 20px;
-        border-radius: 5px;
-        background-color: #f0f0f0;
-        font-size: 24px;
-    }
-    .partial {
-        color: #666;
-        font-style: italic;
-    }
-    .final {
-        color: #000;
-        display: block;
-        margin-bottom: 10px;
-    }
-    .previous-final {
-        color: #666;
-        display: block;
-        margin-bottom: 10px;
-    }
-    h1 {
+        margin: 0;
+        font-family: 'Arial', sans-serif;
         color: #333;
-        font-size: 32px;
+        background: linear-gradient(135deg, #6a11cb, #2575fc);
+        line-height: 1.6;
+        height: 100vh; /* Ajouté */
+        overflow: hidden; /* Ajouté */
+        flex: auto;
+        max-width: 800px;
+    }
+
+    header {
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 {
+        color: white;
+        text-align: center;
+    }
+
+    nav {
+        margin: 20px 0;
+    }
+
+    nav a {
+        color: #fff;
+        text-decoration: none;
+        margin: 0 15px;
+    }
+
+    /*  */
+    #transcription {
+        /* container */
+        padding: 25px;
+        margin-top: 25px;
+        min-height: 150px;
+
+        /* Border */
+        border-style: solid;
+        border-width: 3px;
+        border-color: whitesmoke;
+        border-radius: 25px;
+
+        /* Texte */
+        color: white;
+        font-size: 24px;
+        font-weight: bolder;
+
+        /* Background */
+        box-shadow: 5px 5px 5px whitesmoke;
+    }
+
+    .partial {
+        color:chartreuse;
+        font-style: italic;
+        padding-left: 10px;
+    }
+
+    #circle {
+        height: 50px;
+        width: 50px;
+        border-radius: 50px;
+        background-color: red;
+    }
+
+    #status {
+        display: flex;
+        justify-content: flex-start;
+        align-self: flex-start;
+        align-items: center;
+        gap: 10px;
+    }
+
+    #status-text {
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 24px;
+        color: white;
+        font-weight: 501;
+    }
+
+    #reload-btn {
+        padding: 10px;
+        font-size: 24px;
+        background-color: red;
+        color: white;
+
+        border-style: none;
+        border-radius: 10px;
+    }
+
+    .hero {
+        background: linear-gradient(180deg, rgba(38, 198, 218, 0.8), rgba(0, 0, 0, 0.7)), url('image.jpg') no-repeat center center/cover;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        color: #fff;
+    }
+
+    section {
+        padding: 20px;
+    }
+
+    .project-card {
+        background: linear-gradient(45deg, #ff6a00, #ee0979);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 10px;
+        transition: transform 0.3s;
+    }
+
+    .project-card:hover {
+        transform: scale(1.05);
+    }
+
+    .testimonial {
+
+        background: linear-gradient(90deg, #00c6ff, #0072ff);
+        border-radius: 10px;
+        padding: 15px;
+        margin: 10px;
+    }
+
+    /* Media Queries pour différentes résolutions */
+
+    /* Smartphones */
+    @media (max-width: 640px) {
+        body {
+            font-size: 14px;
+        }
+
+        .hero {
+            height: 70vh;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+        }
+
+        nav a {
+            margin: 5px 0;
+        }
+
+        .project-card, .testimonial {
+            padding: 15px;
+            margin: 5px;
+        }
+    }
+
+    /* Tablettes */
+    @media (min-width: 641px) and (max-width: 1024px) {
+        body {
+            font-size: 16px;
+        }
+
+        .hero {
+            height: 80vh;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+        }
+
+        .project-card, .testimonial {
+            padding: 20px;
+            margin: 10px;
+        }
+    }
+
+    /* Ordinateurs de bureau */
+    @media (min-width: 1025px) {
+        body {
+            font-size: 18px;
+        }
+
+        .hero {
+            height: 100vh;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+        }
+
+        .project-card, .testimonial {
+            padding: 25px;
+            margin: 15px;
+        }
     }
 </style>
+
+<!-- Made by CUYNAT MAXIM 2024-2025 -->

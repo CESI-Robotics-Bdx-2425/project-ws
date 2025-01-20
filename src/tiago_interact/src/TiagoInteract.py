@@ -62,8 +62,7 @@ class TiagoInteract:
         while self.is_speaking:
             rospy.sleep(1)
         
-        # Unlock TTS
-        rospy.sleep(1)        
+        # Unlock TTS     
         self.tts_status_topic.publish(False)
     
     def stt_process(self, ros_msg):

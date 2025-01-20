@@ -25,7 +25,7 @@
         {
             "type": "result_test",
             "sentence": "Voici la brochure correspondante. Vous trouverez des informations sur des formations qui correspondent à votre profil",
-            "paper_id": 0
+            "flyer_id": 0
         }
     ]
 }

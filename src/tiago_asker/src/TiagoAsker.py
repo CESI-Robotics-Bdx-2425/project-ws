@@ -76,7 +76,7 @@ class TiagoAsker():
         print(q_type, self.selected_question)
         selected_result = [r for r in self.questions['results'] if r['type'] == q_type][0]
         self.say(selected_result['sentence'])
-        return
+        return selected_result['flyer_id']
                 
         
 if __name__ == "__main__":

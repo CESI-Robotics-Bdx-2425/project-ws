@@ -1,0 +1,157 @@
+pal_camera_calibration_extrinsics:
+  xtion:
+    pitch: 0.035443840061497006
+    roll: 0.0006490033171310755
+    x: 0.00022704106933567773
+    y: 0.0467358044808978
+    yaw: -0.005861755186270633
+    z: 6.438545939106788e-05
+pal_camera_calibration_intrinsics:
+  depth_xtion:
+    camera_matrix:
+      cols: 3
+      data:
+      - 580.5425820421041
+      - 0.0
+      - 330.12087472569954
+      - 0.0
+      - 580.9299393214006
+      - 244.7506479387948
+      - 0.0
+      - 0.0
+      - 1.0
+      rows: 3
+    camera_name: depth_PS1080_PrimeSense
+    distortion_coefficients:
+      cols: 1
+      data:
+      - -0.04978536176302659
+      - 0.08388068248202839
+      - -0.006820757331908396
+      - 0.0029371344896373286
+      - 0.0
+      rows: 5
+    distortion_model: plumb_bob
+    image_height: 480
+    image_width: 640
+    projection_matrix:
+      cols: 4
+      data:
+      - 580.0882568359375
+      - 0.0
+      - 331.2220848067227
+      - 0.0
+      - 0.0
+      - 578.8215942382812
+      - 241.2164208040631
+      - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+      rows: 3
+    rectification_matrix:
+      cols: 3
+      data:
+      - 1
+      - 0
+      - 0
+      - 0
+      - 1
+      - 0
+      - 0
+      - 0
+      - 1
+      rows: 3
+  rgb_xtion:
+    camera_matrix:
+      cols: 3
+      data:
+      - 522.0592726819208
+      - 0.0
+      - 327.1122193418259
+      - 0.0
+      - 522.1943972439309
+      - 228.49840496340164
+      - 0.0
+      - 0.0
+      - 1.0
+      rows: 3
+    camera_name: rgb_PS1080_PrimeSense
+    distortion_coefficients:
+      cols: 1
+      data:
+      - 0.03428809964086624
+      - -0.11761127959914759
+      - -0.004087049185391351
+      - 0.00022993438231999193
+      - 0.0
+      rows: 5
+    distortion_model: plumb_bob
+    image_height: 480
+    image_width: 640
+    projection_matrix:
+      cols: 4
+      data:
+      - 519.3231811523438
+      - 0.0
+      - 327.06424090714063
+      - 0.0
+      - 0.0
+      - 521.7867431640625
+      - 226.59439782598565
+      - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+      rows: 3
+    rectification_matrix:
+      cols: 3
+      data:
+      - 1
+      - 0
+      - 0
+      - 0
+      - 1
+      - 0
+      - 0
+      - 0
+      - 1
+      rows: 3
+pal_deployer_cfg_calibration:
+  arm_left_1_motor:
+    calibration_offset: 0.0072
+  arm_left_3_motor:
+    calibration_offset: -0.00563
+  arm_right_5_motor:
+    calibration_offset: -0.0076
+  torso_lift_motor:
+    calibration_offset: -0.0206
+pal_eye_hand_calibration_tiago_dual:
+  arm_left_1_joint_offset: -0.0303124
+  arm_left_2_joint_offset: 0.038918
+  arm_left_3_joint_offset: 0.00224319
+  arm_left_4_joint_offset: 0.00305367
+  arm_left_5_joint_offset: 0.0199
+  arm_left_6_joint_offset: -0.0056672
+  arm_left_7_joint_offset: 0.00787594
+  arm_right_1_joint_offset: 0.0526003
+  arm_right_2_joint_offset: 0.05625721
+  arm_right_3_joint_offset: -0.00997213
+  arm_right_4_joint_offset: 0.0250935
+  arm_right_5_joint_offset: 0.0199
+  arm_right_6_joint_offset: 0.0199
+  arm_right_7_joint_offset: -0.0199
+  camera_orientation_p: -0.0312837
+  camera_orientation_r: -1.56386
+  camera_orientation_y: 0.0396298
+  camera_position_x: 0.107295
+  camera_position_y: 0.0776584
+  camera_position_z: -0.00634429
+  head_1_joint_offset: 0.0241412
+  head_2_joint_offset: 0.0327031
+pal_wheel_calibration:
+  left_wheel_radius_multiplier: 1.010375635
+  right_wheel_radius_multiplier: 1.008974619
+  wheel_separation_multiplier: 1.03535396

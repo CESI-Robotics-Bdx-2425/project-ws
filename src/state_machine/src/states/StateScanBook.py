@@ -43,6 +43,6 @@ class BookScanState(smach.State):
             # Vérifier si le nombre maximum d'erreurs a été atteint
             if self.error_count >= 3:
                 rospy.logerr("Nombre maximum d'erreurs atteint. Passage à l'état Error.")
-                return "idle"
+                return "error"
             else:
                 return "idle"

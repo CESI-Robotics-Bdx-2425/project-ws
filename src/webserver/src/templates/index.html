@@ -9,7 +9,6 @@
         <div>
             <h1>Transcription en temps réel</h1>
         </div>
-
         <div id="status">
             <div id="circle"></div>
             <div id="status-text">Status: Déconnecté</div>
@@ -17,10 +16,9 @@
                 <button id="reload-btn">Reconnexion</button>
             </div>
         </div>
-
         <div id="transcription"></div>
-
         <div id="option"></div>
+        <div id="credits">© Made by A5 2024-2025</div>
 
     </body>
 </html>
@@ -49,6 +47,7 @@
 
         // ============================================ Fonction pour établir une connexion ROS
         let ros;
+
         const connectToRos = () => {
             ros = new ROSLIB.Ros({
                 url: `ws://${window.location.hostname}:9090`
@@ -65,7 +64,7 @@
             ros.on('error', (error) => {
                 console.error('Erreur de connexion à ROS:', error);
                 statusDiv.textContent = 'Status: Erreur de connexion';
-                statusCircle.style.backgroundColor = 'red';
+                statusCircle.style.backgroundColor = 'orange';
                 updateReloadButtonVisibility(false); // Bouton masqué
             });
 
@@ -73,7 +72,7 @@
                 console.warn('Connexion au serveur ROSBridge fermée.');
                 statusDiv.textContent = 'Status: Déconnecté';
                 setTimeout(connectToRos, 5000);
-                statusCircle.style.backgroundColor = 'orange';
+                statusCircle.style.backgroundColor = 'red';
                 updateReloadButtonVisibility(false); // Bouton masqué
             });
 
@@ -126,7 +125,7 @@
 
             // ============================================ Gestions des questions de TIAGo++
 
-
+            
 
             // ============================================
         };
@@ -134,9 +133,12 @@
         // Initialisation de la connexion
         connectToRos();
 
+        /* Event de reload de la page */
         reloadBtn.addEventListener('click', () => {
             connectToRos();
         });
+
+
     });
 </script>
 
@@ -198,6 +200,7 @@
         color: white;
         font-size: 24px;
         font-weight: bolder;
+        font-style: oblique;
 
         /* Background */
         box-shadow: 5px 5px 5px whitesmoke;
@@ -210,8 +213,8 @@
     }
 
     #circle {
-        height: 50px;
-        width: 50px;
+        height: 45px;
+        width: 45px;
         border-radius: 50px;
         background-color: red;
     }
@@ -240,6 +243,11 @@
 
         border-style: none;
         border-radius: 10px;
+    }
+
+    #credits {
+        margin-top: 25px;
+        font-style: italic;
     }
 
     .hero {

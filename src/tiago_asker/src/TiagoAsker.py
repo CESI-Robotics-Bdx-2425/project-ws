@@ -5,7 +5,8 @@ import rospy
 from std_msgs.msg import MultiArrayLayout, String
 from std_srvs.srv import Empty
 from pal_interaction_msgs.msg import TtsActionGoal
-from tiago_asker.srv import TiagoAskerAnswer, TiagoAskerService
+from tiago_asker.srv import TiagoAskerService
+from tiago_interact.srv import TiagoInteractTTS, TiagoInteractSTT
 
 class TiagoAsker():
     def __init__(self):
@@ -22,25 +23,14 @@ class TiagoAsker():
             self.questions = json.load(file)
             
         # Init the topics
-        self.question_topic = rospy.Publisher('/tiago_asker/question', String, queue_size=10)
-        self.answers_topic = rospy.Publisher('/tiago_asker/answers', MultiArrayLayout, queue_size=10)
-        self.tts = rospy.Publisher('/tts/goal', TtsActionGoal, queue_size=10)
+        rospy.wait_for_service('/tiago_interact/tts')
+        rospy.wait_for_service('/tiago_interact/ask')
+        self.tts_service = rospy.ServiceProxy('/tiago_interact/tts', TiagoInteractTTS)
+        self.ask_service = rospy.ServiceProxy('/tiago_interact/ask', TiagoInteractSTT)
         
         # Publish the service to ask question
         self.question_service = rospy.Service('/tiago_asker', TiagoAskerService, self.start)
-        self.process_answer_service = rospy.Service('/tiago_asker/answer', TiagoAskerAnswer, self.process_answer)
         rospy.spin()
-        
-    def say(self, msg):
-        tts_msg = TtsActionGoal()
-        tts_msg.goal.rawtext.text = msg
-        tts_msg.goal.rawtext.lang_id = 'fr_FR'
-        self.tts.publish(tts_msg)
-        rospy.sleep(10)
-        
-    def process_answer(self, ros_req):
-        self.answer = ros_req.answer
-        return self.answer
     
     def reset(self):
         self.finish = False
@@ -52,17 +42,22 @@ class TiagoAsker():
         self.reset()
         # Start the conversation with a random question
         random_intro = random.choice(self.questions['intro'])
-        self.say(random_intro)
+        _ = self.tts_service(random_intro)
         
         # Start with the first question
-        q_type = 'bac'
+        q_type = 'question_bac'
         while not self.finish:
             # Select a question
             self.selected_question = [q for q in self.questions['questions'] if q_type == q['type']][0]
             
             if not self.waiting_answer:            
-                self.say(self.selected_question['question'])
+                _ = self.tts_service(self.selected_question['question'])
                 self.waiting_answer = True
+                
+                # Ask TiagoInteract for answer
+                self.possible_answers = self.selected_question['responses'].keys()
+                self.answer = self.ask_service(self.possible_answers).answer
+                print(self.answer)
                 
             if self.answer != None:
                 q_type = self.selected_question['responses'][self.answer]
@@ -75,7 +70,7 @@ class TiagoAsker():
         # Get a result sentence
         print(q_type, self.selected_question)
         selected_result = [r for r in self.questions['results'] if r['type'] == q_type][0]
-        self.say(selected_result['sentence'])
+        _ = self.tts_service(selected_result['sentence'])
         return selected_result['flyer_id']
                 
         

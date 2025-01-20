@@ -11,5 +11,4 @@ class StartState(smach.State):
     def execute(self, userdata):
         rospy.loginfo("Etat de départ : Passage à l'état Scan.")
         self.TTS.say('Je démarre la calibration. Merci de ne plus modifier mon environnement')
-
         return 'scanBook'

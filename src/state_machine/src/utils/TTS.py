@@ -19,16 +19,7 @@ class TextToSpeech():
     def stop(self):
         """Arrête le thread de synthèse vocale"""
         self.pub_tts.unregister()
-
+            
+    @staticmethod
     def say(self, text):
         self.tts_service(text)
-        """
-        print(f"Synthétisation du texte : {text}")
-        Synthétise un texte en parole
-        self.is_tts_active = True
-        tts_msg = TtsActionGoal()
-        tts_msg.goal.rawtext.lang_id = self.language
-        tts_msg.goal.rawtext.text = text
-        self.pub_tts.publish(tts_msg)
-        rospy.sleep(1)  # Attendre 1 seconde pour laisser le temps à la synthèse vocale de démarrer
-        """

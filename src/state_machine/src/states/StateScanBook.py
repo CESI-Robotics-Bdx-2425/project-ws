@@ -31,7 +31,6 @@ class BookScanState(smach.State):
                 r = scan_book(int(aruco_id))
                 if (r.coordinates.pose.position.x == 0 and r.coordinates.pose.position.y == 0 and r.coordinates.pose.position.z ==0):
                     self.tts.say(f"je n'ai pas trouvé le flyer {flyer + 1}")
-                    rospy.sleep(5)
                     return "error"
                 rospy.sleep(3)
                 rospy.loginfo("Etat Scan : Réponse du service reçue, passage à l'état Listen.")

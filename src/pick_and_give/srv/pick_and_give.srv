@@ -1,0 +1,15 @@
+# Service for pick-and-give
+# Request:
+# Coordinates: px, py, pz, ox, oy, oz, ow
+# Flyer number: flyerNb
+float64 px
+float64 py
+float64 pz
+float64 ox
+float64 oy
+float64 oz
+float64 ow
+int32 flyerNb
+
+---
+# Empty Response

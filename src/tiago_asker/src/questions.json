@@ -32,8 +32,8 @@
             "type": "question_reorientation",
             "question": "Êtes-vous en train de vous réorienter ?",
             "responses": {
-                "oui": "result_fail",
-                "non": "question_ingenieur"
+                "oui": "question_ingenieur",
+                "non": "result_fail"
             }
         },
         {

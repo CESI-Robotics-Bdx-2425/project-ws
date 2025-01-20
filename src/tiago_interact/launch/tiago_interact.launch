@@ -1,0 +1,3 @@
+<launch>
+    <node name="TiagoInteract" pkg="tiago_interact" type="TiagoInteract.py" output='screen'/>
+</launch>

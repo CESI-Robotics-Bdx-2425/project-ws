@@ -1,10 +1,11 @@
+#!/usr/bin/env python3
 from std_srvs.srv import Empty, EmptyResponse
+from pick_and_give.srv import PickAndGive
 import rospy
 import moveit_commander
 import sys
 import copy
 from pprint import pprint
-
 
 class PickAndPlaceService:
     def __init__(self):
@@ -12,10 +13,12 @@ class PickAndPlaceService:
         moveit_commander.roscpp_initialize(sys.argv)
         rospy.init_node("pick_and_place_service", anonymous=True)
 
+        rospy.wait_for_service('/homing')
+
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
         self.move_group = moveit_commander.MoveGroupCommander("both_arms_torso")
-        self.s = rospy.Service("pick_and_place", Empty, self.pick_and_place_handler)
+        self.s = rospy.Service("pick_and_place", PickAndGive, self.pick_and_place_handler)
 
         # Ensure that the robot is initialized properly
         rospy.sleep(2)
@@ -98,7 +101,7 @@ class PickAndPlaceService:
         gripper_group.clear_pose_targets()
         gripper_group.stop()
 
-    def pick_and_place(self, req):
+    def pick_and_place_handler(self, req):
         # Perform pick and place task
         self.monter_buste([0.20])
         self.arm_move_to(1)
@@ -106,22 +109,21 @@ class PickAndPlaceService:
 
         flyerNb = 0  # You can set this based on your service input
 
-        self.go_to_height(flyerNb)
+        self.go_to_height(req.flyerNb)
         self.mouvementPince('open')
 
         print("Moving to pick position")
-        self.mouvement(flyerNb, True, 0.54453056471187056, 0.12492931499231739, 0.9489589262033916, 0.9927617100741939, -0.11512265866514476, 0.022540725197273525, 0.025746381881962536)
+        self.mouvement(req.flyerNb, True, 0.54453056471187056, 0.12492931499231739, 0.9489589262033916, 0.9927617100741939, -0.11512265866514476, 0.022540725197273525, 0.025746381881962536)
         self.mouvementPince('close')
-        self.mouvement(flyerNb, False, 0.54453056471187056, 0.12492931499231739, 0.9489589262033916, 0.9927617100741939, -0.11512265866514476, 0.022540725197273525, 0.025746381881962536)
+        self.mouvement(req.flyerNb, False, 0.54453056471187056, 0.12492931499231739, 0.9489589262033916, 0.9927617100741939, -0.11512265866514476, 0.022540725197273525, 0.025746381881962536)
 
         self.monter_buste([0.35])
-        self.mouvement(flyerNb, True, 0.66375268727851, 0.20147028471550366, 1.2491498772354426, 0.9807443671508588, -0.19422556540011543, 0.014899242368626761, 0.013961684128638907)
+        self.mouvement(req.flyerNb, True, 0.66375268727851, 0.20147028471550366, 1.2491498772354426, 0.9807443671508588, -0.19422556540011543, 0.014899242368626761, 0.013961684128638907)
 
         self.mouvementPince('open')
 
         self.arm_move_to(1)
 
-        rospy.wait_for_service('homing')
         home = rospy.ServiceProxy('homing', Empty)
         r = home()
         rospy.sleep(3)

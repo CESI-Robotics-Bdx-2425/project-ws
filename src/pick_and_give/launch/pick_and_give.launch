@@ -1,0 +1,5 @@
+<launch>
+    <node name="PickAndGive" pkg="pick_and_give" type="pickgiveservice.py" output="screen">
+
+    </node>
+</launch>

@@ -1,0 +1,6 @@
+<launch>
+    <arg name="questions_file_path" default="$(find tiago_asker)/src/questions.json" />
+    <node name="TiagoAsker" pkg="tiago_asker" type="TiagoAsker.py" output="screen">
+        <param name="questions_file_path" value="$(arg questions_file_path)" />
+    </node>
+</launch>

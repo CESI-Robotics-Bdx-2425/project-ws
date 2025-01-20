@@ -1,0 +1,31 @@
+{
+    "intro": [
+        "Bonjour, je suis TIAGO le robot, je vais vous poser quelques questions pour mieux vous connaître et vous guider parmis les formations que nous proposons",
+        "Bonjour et bienvenue au CESI, je suis TIAGO le robot, je vais vous poser quelques questions pour mieux vous connaître et vous guider parmis les formations que nous proposons"
+    ],
+    "questions": [
+        {
+            "type": "bac",
+            "question": "Avez-vous le baccalauréat ?",
+            "responses": {
+                "oui": "formation",
+                "non": "first_question"
+            }
+        },
+        {
+            "type": "formation",
+            "question": "Quel domaine de formation vous interesse ?",
+            "responses": {
+                "informatique":"result_test",
+                "généraliste": "oui"
+            }
+        }
+    ],
+    "results": [
+        {
+            "type": "result_test",
+            "sentence": "Voici la brochure correspondante. Vous trouverez des informations sur des formations qui correspondent à votre profil",
+            "paper_id": 0
+        }
+    ]
+}

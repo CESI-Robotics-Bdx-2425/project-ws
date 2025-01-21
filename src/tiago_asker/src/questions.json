@@ -8,6 +8,14 @@
             "type": "question_bac",
             "question": "Avez-vous le baccalauréat ?",
             "responses": {
+                "oui": "question_bac_plus_2",
+                "non": "question_science"
+            }
+        },
+        {
+            "type": "question_bac_plus_2",
+            "question": "Avez-vous ou êtes-vous en train de passer un Bac+2 ?",
+            "responses": {
                 "oui": "question_bac_plus_3",
                 "non": "question_science"
             }
@@ -16,23 +24,23 @@
             "type": "question_bac_plus_3",
             "question": "Êtes-vous en train ou avez-vous prévu de suivre des études pour avoir un niveau BAC + 3 ?",
             "responses": {
-                "oui": "question_mastere_pro",
-                "non": "question_reorientation"
+                "oui": "question_ingenieur",
+                "non": "question_science"
             }
         },
         {
-            "type": "question_mastere_pro",
-            "question": "Êtes-vous intéressé par une formation de Mastère professionnel ?",
+            "type": "question_ingenieur",
+            "question": "Êtes-vous intéressé par une formation d'ingénieur ?",
+            "responses": {
+                "oui": "result_ingenieur",
+                "non": "question_alternance"
+            }
+        },
+        {
+            "type": "question_alternance",
+            "question": "Avez-vous prévu de suivre des études en alternance pour avoir un bac+5 ?",
             "responses": {
                 "oui": "result_mastere_pro",
-                "non": "question_reorientation"
-            }
-        },
-        {
-            "type": "question_reorientation",
-            "question": "Êtes-vous en train de vous réorienter ?",
-            "responses": {
-                "oui": "question_ingenieur",
                 "non": "result_fail"
             }
         },
@@ -40,12 +48,12 @@
             "type": "question_science",
             "question": "Avez-vous une appétence pour les matières scientifiques ?",
             "responses": {
-                "oui": "question_ingenieur",
+                "oui": "question_ingenieur_2",
                 "non": "question_bac_plus_3"
             }
         },
         {
-            "type": "question_ingenieur",
+            "type": "question_ingenieur_2",
             "question": "Êtes-vous intéressé par une formation d'ingénieur ?",
             "responses": {
                 "oui": "result_ingenieur",
@@ -54,17 +62,9 @@
         },
         {
             "type": "question_bachelor_spe",
-            "question": "Êtes-vous intéressé par une formation de Bachelor de Spécialisation ?",
+            "question": "Avez-vous prévu de suivre des études en alternance pour avoir un bac+2 ou un bac+3 ?",
             "responses": {
                 "oui": "result_bachelor_spe",
-                "non": "question_mastere_pro_2"
-            }
-        },
-        {
-            "type": "question_mastere_pro_2",
-            "question": "Êtes-vous intéressé par les formations de Mastères que nous proposons ?",
-            "responses": {
-                "oui": "result_mastere_pro",
                 "non": "result_fail"
             }
         }

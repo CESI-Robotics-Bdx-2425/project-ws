@@ -3,7 +3,6 @@
     <head>
         <meta charset="utf-8" />
         <title>Transcription en temps réel</title>
-        <script src="https://cdn.jsdelivr.net/npm/roslib/build/roslib.min.js"></script>
     </head>
     <body>
         <div>
@@ -28,241 +27,201 @@
 
         <div id="whiteCase">
             <div id="listener">
-                <div id="listener-msg">Ecoute en cours</div>
+                <div id="listener-msg">Transcription libre</div>
                 <div class="listen" id="listen-true"></div>
-                <div class="loader" id="listen-false"></div>
-        </div>
+                <div class="loader" id="listen-false" style="display: none;" ></div>
+            </div>
             <div id="transcription"></div>
         </div>
-        
-
         <div id="anwsers"></div>
-        
         <div id="credits">© Made by A5 2024-2025</div>
-
     </body>
 </html>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Variables globales pour l'affichage
-        const transcriptionDiv = document.getElementById('transcription');
-        const anwsersDiv = document.getElementById('anwsers');
-        const statusDiv = document.getElementById('status-text');
-        const reloadBtn = document.getElementById('reload-btn');
-        const statusCircle = document.getElementById('circle');
-        const toggleMic = document.getElementById('toggle-mic');
-        const settingsBtn = document.getElementById('settings-btn');
-        const optionsDiv = document.getElementById('options');
-        const loadingAnimator = document.getElementById('loading');
-        const listenerMsg = document.getElementById('listener-msg');
-        const listenTrue = document.getElementById('listen-true');
-        const listenFalse = document.getElementById('listen-false');
+document.addEventListener('DOMContentLoaded', () => {
+    function importRoslib() {
+        // Récupérer le hostname de manière dynamique
+        const hostname = window.location.hostname;
+        const scriptUrl = `http://${hostname}:8000/roslib`;
 
-        var toggleMicValue = true;
+        // Créer une balise <script>
+        const script = document.createElement("script");
+        script.src = scriptUrl;
+        script.type = "text/javascript";
+        //script.async = true;
 
-        let partialSpan = null;
-        let previousFinalSpan = null;
-        let currentFinalSpan = null;
-
-        // Variable pour activer ou désactiver la transcription
-        let isSttEnabled = true;
-        let isInteractStatus = false;
-
-        // Fonction pour afficher ou masquer le bouton Reconnexion
-        const updateReloadButtonVisibility = (isConnected) => {
-            if (isConnected) {
-                reloadBtn.style.display = 'none'; // Cache le bouton si connecté
-            } else {
-                reloadBtn.style.display = 'block'; // Affiche le bouton si déconnecté
-            }
+        // Ajouter des gestionnaires pour le chargement et les erreurs
+        script.onload = () => {
+            console.log("Roslib chargé avec succès !");
+            // Vous pouvez initialiser du code ici si besoin
+            const ros = new ROSLIB.Ros({
+                url: `ws://${hostname}:9090`
+            });
+            console.log("Connexion ROS initialisée !");
         };
 
-        // Fonction pour établir une connexion ROS
-        let ros;
-
-        const connectToRos = () => {
-            ros = new ROSLIB.Ros({
-                url: `ws://${window.location.hostname}:9090`
-            });
-
-            // Gestion des événements ROS
-            ros.on('connection', () => {                    
-                updateReloadButtonVisibility(true);            
-                // Update
-                statusDiv.textContent = 'Status: Connecté';
-                statusCircle.style.display = 'Block';
-                loadingAnimator.style.display = 'None';
-            });
-
-            ros.on('error', (error) => {
-                updateReloadButtonVisibility(false);
-                // Update
-                statusDiv.textContent = 'Status: Erreur de connexion';
-                statusCircle.style.display = 'None';
-                loadingAnimator.style.display = 'grid';
-
-            });
-
-            ros.on('close', () => {
-                updateReloadButtonVisibility(true);
-                // Update
-                statusDiv.textContent = 'Status: Déconnecté, attente de la connexion';
-                statusCircle.style.display = 'None';
-                loadingAnimator.style.display = 'grid';
-            });
-
-            // Création des abonnements aux topics
-            const partialTopic = new ROSLIB.Topic({
-                ros: ros,
-                name: '/stt/partial',
-                messageType: 'std_msgs/String'
-            });
-
-            const fullTopic = new ROSLIB.Topic({
-                ros: ros,
-                name: '/stt/full',
-                messageType: 'std_msgs/String'
-            });
-
-            // Abonnement au topic /stt_listener_toggle
-            const toggleSttListener = new ROSLIB.Topic({
-                ros: ros,
-                name: '/tiago_interact/stt/status',
-                messageType: 'std_msgs/Bool'
-            });
-
-
-            // Abonnement au topic /tiago_interact/tts/status
-            const interactStatus = new ROSLIB.Topic({
-                ros: ros,
-                name: '/tiago_interact/stt/status',
-                messageType: 'std_msgs/Bool'
-            });
-
-            interactStatus.subscribe((message) => {
-                console.log("isInteractStatus : " + message.data);
-                if (message.data === true) {
-                    isInteractStatus = true;
-                    // Actions
-                    listenerMsg.textContent = "Je t'écoute :D"
-                    listenTrue.style.display = 'grid';
-                    listenFalse.style.display = 'none';
-
-                } else {
-                    isInteractStatus = false;
-                    // Actions
-                    listenerMsg.textContent = "Je ne t'écoute pas ;)"
-                    listenTrue.style.display = 'none';
-                    listenFalse.style.display = 'grid';
-                }
-            });
-
-            // Gestion des messages reçus sur /stt_listener_toggle
-            toggleSttListener.subscribe((message) => {
-                console.log("toggleSttListener : " + message.data)
-                if (message.data === true) {
-                    isSttEnabled = true;
-
-                    // Actions
-                    transcriptionDiv.style.display = 'block';
-                    anwsersDiv.style.display = 'None';
-                } else {
-                    isSttEnabled = false;
-
-                    // Actions
-                    transcriptionDiv.style.display = 'None';
-                    anwsersDiv.style.display = 'block';
-                }
-            });
-
-            // Gestion des messages partiels
-            partialTopic.subscribe((message) => {
-                if (!isSttEnabled) return; // Ignorer si STT désactivé
-
-                if (!partialSpan) {
-                    partialSpan = document.createElement('span');
-                    partialSpan.className = 'partial';
-                    transcriptionDiv.appendChild(partialSpan);
-                }
-                partialSpan.textContent = message.data;
-            });
-
-            // Gestion des messages finaux
-            fullTopic.subscribe((message) => {
-                if (!isSttEnabled) return; // Ignorer si STT désactivé
-
-                if (partialSpan) {
-                    partialSpan.remove();
-                    partialSpan = null;
-                }
-
-                if (currentFinalSpan) {
-                    if (previousFinalSpan) {
-                        previousFinalSpan.remove();
-                    }
-                    previousFinalSpan = currentFinalSpan;
-                    previousFinalSpan.className = 'previous-final';
-                }
-
-                currentFinalSpan = document.createElement('span');
-                currentFinalSpan.className = 'final';
-                currentFinalSpan.textContent = message.data;
-                transcriptionDiv.appendChild(currentFinalSpan);
-            });
+        script.onerror = () => {
+            console.error("Erreur lors du chargement de Roslib.");
         };
 
-        // Initialisation de la connexion
-        connectToRos();
+        // Ajouter le script dans la balise <head>
+        document.head.appendChild(script);
+    }
+    // Variables globales
+    const elements = {
+        transcriptionDiv: document.getElementById('transcription'),
+        answersDiv: document.getElementById('anwsers'),
+        statusDiv: document.getElementById('status-text'),
+        reloadBtn: document.getElementById('reload-btn'),
+        statusCircle: document.getElementById('circle'),
+        toggleMic: document.getElementById('toggle-mic'),
+        settingsBtn: document.getElementById('settings-btn'),
+        optionsDiv: document.getElementById('options'),
+        loadingAnimator: document.getElementById('loading'),
+        listenerMsg: document.getElementById('listener-msg'),
+        listenTrue: document.getElementById('listen-true'),
+        listenFalse: document.getElementById('listen-false'),
+    };
 
-        // Événement pour recharger la connexion manuellement
-        reloadBtn.addEventListener('click', () => {
-            connectToRos();
+    let toggleMicValue = true;
+    let partialSpan = null;
+    let previousFinalSpan = null;
+    let currentFinalSpan = null;
+    let isSttEnabled = true;
+    let isInteractStatus = false;
+
+    
+
+    // Connexion ROS et abonnements
+    const connectToRos = () => {
+        const ros = new ROSLIB.Ros({url: `ws://${window.location.hostname}:9090`});
+
+        updateStatusDisplay('Connexion en cours...', false);
+
+        ros.on('connection', () => {
+            updateReloadButtonVisibility(true);
+            updateStatusDisplay('Connecté', true);
         });
 
-        toggleMic.addEventListener('click', () => {
-        // Désactiver le bouton pendant 5 secondes
-        toggleMic.disabled = true;
-
-        setTimeout(() => {
-            toggleMic.disabled = false; // Réactiver le bouton après 5 secondes
-        }, 5000);
-
-        // Bouton micro
-        console.log(toggleMicValue);
-
-        if (toggleMicValue == true) {
-            toggleMicValue = false;
-            toggleMic.style.backgroundColor = 'red';
-            toggleMic.style.color = 'white';
-        } else {
-            toggleMicValue = true;
-            toggleMic.style.backgroundColor = 'lime';
-            toggleMic.style.color = 'black';
-        }
-
-        // Appel du service : /tiago_interact/stt/toggle empty
-        const addTwoIntsService = new ROSLIB.Service({
-            ros: ros,
-            name: '/tiago_interact/stt/toggle', // Nom du service ROS
-            serviceType: 'std_srvs/empty' // Type du service
+        ros.on('error', () => {
+            updateReloadButtonVisibility(false);
+            updateStatusDisplay('Erreur de connexion', false);
         });
-        const request = new ROSLIB.ServiceRequest({});
+
+        ros.on('close', () => {
+            updateReloadButtonVisibility(false);
+            updateStatusDisplay('Déconnecté...', false);
+        });
+
+        const topics = {
+            partial: new ROSLIB.Topic({ ros, name: '/stt/partial', messageType: 'std_msgs/String' }),
+            full: new ROSLIB.Topic({ ros, name: '/stt/full', messageType: 'std_msgs/String' }),
+            toggleStt: new ROSLIB.Topic({ ros, name: '/tiago_interact/stt/status', messageType: 'std_msgs/Bool' }),
+            interactStatus: new ROSLIB.Topic({ ros, name: '/tiago_interact/stt/status', messageType: 'std_msgs/Bool' }),
+        };
+
+        topics.interactStatus.subscribe((message) => updateListenerDisplay(message.data));
         
-        // Appel du service
-        addTwoIntsService.callService(request, (result) => {
-            console.log('Service appelé avec succès');
+        topics.toggleStt.subscribe((message) => {
+            isSttEnabled = message.data;
+            elements.transcriptionDiv.style.display = isSttEnabled ? 'block' : 'none';
+            elements.answersDiv.style.display = isSttEnabled ? 'none' : 'block';
         });
-        });
+        
+        topics.partial.subscribe(handlePartialMessage);
+        
+        topics.full.subscribe(handleFullMessage);
+    };
 
-        settingsBtn.addEventListener('click', () => {
-            if (optionsDiv.style.display === 'none') {
-                optionsDiv.style.display = 'block';  // Affiche le div
-            } else {
-                optionsDiv.style.display = 'none';   // Cache le div
-            }
+    // Affichage / masquage du bouton Reconnexion
+    const updateReloadButtonVisibility = (isConnected) => {
+        console.log("updateReloadButtonVisibility : " + updateReloadButtonVisibility);
+        elements.reloadBtn.style.display = isConnected ? 'none' : 'block';
+    };
+
+    // Mise à jour des éléments d'état
+    const updateStatusDisplay = (status, isConnected) => {
+        console.log("updateStatusDisplay : " + isConnected);
+        elements.statusDiv.textContent = `Status: ${status}`;
+        elements.statusCircle.style.display = isConnected ? 'grid' : 'none';
+        elements.loadingAnimator.style.display = isConnected ? 'none' : 'grid';
+    };
+
+    // Mise à jour de l'écouteur
+    const updateListenerDisplay = (isListening) => {
+        console.log("isListening : " + isListening);
+        if (typeof isListening !== 'boolean') {
+            console.error("Erreur : La donnée passée à 'updateListenerDisplay' n'est pas un booléen.");
+            elements.listenerMsg.textContent = "Erreur : État inconnu.";
+            elements.listenTrue.style.display = 'none';
+            elements.listenFalse.style.display = 'none';
+            return; // Stoppe l'exécution
+        }else{
+            elements.listenerMsg.textContent = isListening ? "Je t'écoute :D" : "Je ne t'écoute pas ;)";
+            elements.listenTrue.style.display = isListening ? 'grid' : 'none';
+            elements.listenFalse.style.display = isListening ? 'none' : 'grid';
+        }
+    };
+
+
+    // Gestion des messages STT
+    const handlePartialMessage = (message) => {
+        // console.log("handlePartialMessage : " + handlePartialMessage);
+        if (!isSttEnabled) return;
+        if (!partialSpan) {
+            partialSpan = document.createElement('span');
+            partialSpan.className = 'partial';
+            elements.transcriptionDiv.appendChild(partialSpan);
+        }
+        partialSpan.textContent = message.data;
+    };
+
+    const handleFullMessage = (message) => {
+        // console.log("handleFullMessage : " + handleFullMessage);
+        if (!isSttEnabled) return;
+        if (partialSpan) {
+            partialSpan.remove();
+            partialSpan = null;
+        }
+        if (currentFinalSpan) {
+            if (previousFinalSpan) previousFinalSpan.remove();
+            previousFinalSpan = currentFinalSpan;
+            previousFinalSpan.className = 'previous-final';
+        }
+        currentFinalSpan = document.createElement('span');
+        currentFinalSpan.className = 'final';
+        currentFinalSpan.textContent = message.data;
+        elements.transcriptionDiv.appendChild(currentFinalSpan);
+    };
+
+    // Gestion des événements
+    elements.reloadBtn.addEventListener('click', connectToRos);
+
+    elements.toggleMic.addEventListener('click', () => {
+        elements.toggleMic.disabled = true;
+        setTimeout(() => (elements.toggleMic.disabled = false), 5000);
+
+        toggleMicValue = !toggleMicValue;
+        elements.toggleMic.style.backgroundColor = toggleMicValue ? 'lime' : 'red';
+        elements.toggleMic.style.color = toggleMicValue ? 'black' : 'white';
+
+        const micService = new ROSLIB.Service({
+            ros: new ROSLIB.Ros(),
+            name: '/tiago_interact/stt/toggle',
+            serviceType: 'std_srvs/Empty',
         });
+        micService.callService(new ROSLIB.ServiceRequest(), () => console.log('Service appelé avec succès'));
     });
+
+    elements.settingsBtn.addEventListener('click', () => {
+        elements.optionsDiv.style.display = elements.optionsDiv.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Initialisation
+    importRoslib();
+    // connectToRos();
+});
 </script>
 
 
@@ -355,6 +314,7 @@
     }
 
     #circle {
+        display: none;
         height: 45px;
         width: 45px;
         border-radius: 50px;

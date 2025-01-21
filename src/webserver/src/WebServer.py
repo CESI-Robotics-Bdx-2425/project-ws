@@ -20,7 +20,16 @@ class WebServer():
         
     async def handle_index(self, request):
         try:
+            print("Acces au index.html")
             return web.FileResponse(f"{self.path}/src/templates/index.html")
+        except Exception as e:
+            rospy.logerr(f"Erreur lors de l'accès au fichier : {e}")
+            return web.Response(status=500, text="Erreur interne au serveur")
+    
+    async def handle_roslib(self, request):
+        try:
+            print("Acces au roslib.min.js")
+            return web.FileResponse(f"{self.path}/src/templates/roslib.min.js")
         except Exception as e:
             rospy.logerr(f"Erreur lors de l'accès au fichier : {e}")
             return web.Response(status=500, text="Erreur interne au serveur")
@@ -30,6 +39,7 @@ class WebServer():
         # Créer l'application web
         app = web.Application()
         app.router.add_get('/', self.handle_index)
+        app.router.add_get('/roslib', self.handle_roslib)
         # Configurer le serveur HTTP
         runner = web.AppRunner(app)
         await runner.setup()

@@ -20,10 +20,10 @@ def main():
     sm.userdata.sm_previous_state = 'Start'
     
     with sm:
-        smach.StateMachine.add('START', StartState(), transitions={'scantable': 'SCANTABLE'})
+        smach.StateMachine.add('START', StartState(), transitions={'scanBook': 'SCANBOOK'})
         smach.StateMachine.add('SCANTABLE', ScanTableState(), transitions={'scanBook': 'SCANBOOK', 'error':'ERROR'})
-        smach.StateMachine.add('SCANBOOK', BookScanState(), transitions={'idle': 'IDLE'})
-        smach.StateMachine.add('TALK', TalkState(), transitions={'idle': 'IDLE'})
+        smach.StateMachine.add('SCANBOOK', BookScanState(), transitions={'talk': 'TALK','error':'ERROR'})
+        smach.StateMachine.add('TALK', TalkState(), transitions={'idle': 'IDLE','error':'ERROR'})
         smach.StateMachine.add('IDLE', IdleState(), transitions={})
         smach.StateMachine.add('ERROR', ErrorState(), transitions={'idle': 'IDLE'})
 

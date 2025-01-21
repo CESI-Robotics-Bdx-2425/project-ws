@@ -62,8 +62,7 @@ class TiagoInteract:
         while self.is_speaking:
             rospy.sleep(1)
         
-        # Unlock TTS
-        rospy.sleep(1)        
+        # Unlock TTS     
         self.tts_status_topic.publish(False)
     
     def stt_process(self, ros_msg):
@@ -72,7 +71,7 @@ class TiagoInteract:
             if self.stt_msg in self.q_answers:
                 self.q_answer = self.stt_msg
             else:
-                self.say("Je n'ai pas compris")
+                self.say("Je n'ai pas compris. Merci de répondre par oui ou non")
         except Exception as e:
             self.error(e)
     

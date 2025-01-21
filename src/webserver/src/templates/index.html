@@ -11,20 +11,30 @@
         </div>
         <div id="status">
             <div id="circle"></div>
+            <div class="loader" id="loading"></div>
             <div id="status-text">Status: Déconnecté</div>
             <div>
                 <button id="reload-btn">Reconnexion</button>
             </div>
             <div id="settings">
                 <div>
-                    <button id="settings-btn">Settings</button>
+                    <button id="settings-btn">Paramètres</button>
                 </div>
             </div>
         </div>
         <div id="options">
             <button id="toggle-mic">Micro On/Off</button>
         </div>
-        <div id="transcription"></div>
+
+        <div id="whiteCase">
+            <div id="listener">
+                <div id="listener-msg">Ecoute en cours</div>
+                <div class="listen" id="listen-true"></div>
+                <div class="loader" id="listen-false"></div>
+        </div>
+            <div id="transcription"></div>
+        </div>
+        
 
         <div id="anwsers"></div>
         
@@ -44,6 +54,11 @@
         const toggleMic = document.getElementById('toggle-mic');
         const settingsBtn = document.getElementById('settings-btn');
         const optionsDiv = document.getElementById('options');
+        const loadingAnimator = document.getElementById('loading');
+        const listenerMsg = document.getElementById('listener-msg');
+        const listenTrue = document.getElementById('listen-true');
+        const listenFalse = document.getElementById('listen-false');
+
         var toggleMicValue = true;
 
         let partialSpan = null;
@@ -52,6 +67,7 @@
 
         // Variable pour activer ou désactiver la transcription
         let isSttEnabled = true;
+        let isInteractStatus = false;
 
         // Fonction pour afficher ou masquer le bouton Reconnexion
         const updateReloadButtonVisibility = (isConnected) => {
@@ -71,26 +87,29 @@
             });
 
             // Gestion des événements ROS
-            ros.on('connection', () => {
-                console.log('Connecté au serveur ROSBridge');
+            ros.on('connection', () => {                    
+                updateReloadButtonVisibility(true);            
+                // Update
                 statusDiv.textContent = 'Status: Connecté';
-                statusCircle.style.backgroundColor = 'lime';
-                updateReloadButtonVisibility(true); // Bouton masqué
+                statusCircle.style.display = 'Block';
+                loadingAnimator.style.display = 'None';
             });
 
             ros.on('error', (error) => {
-                console.error('Erreur de connexion à ROS:', error);
+                updateReloadButtonVisibility(false);
+                // Update
                 statusDiv.textContent = 'Status: Erreur de connexion';
-                statusCircle.style.backgroundColor = 'orange';
-                updateReloadButtonVisibility(false); // Bouton affiché
+                statusCircle.style.display = 'None';
+                loadingAnimator.style.display = 'grid';
+
             });
 
             ros.on('close', () => {
-                console.warn('Connexion au serveur ROSBridge fermée.');
-                statusDiv.textContent = 'Status: Déconnecté';
-                setTimeout(connectToRos, 5000); // Reconnexion automatique
-                statusCircle.style.backgroundColor = 'red';
-                updateReloadButtonVisibility(false); // Bouton affiché
+                updateReloadButtonVisibility(true);
+                // Update
+                statusDiv.textContent = 'Status: Déconnecté, attente de la connexion';
+                statusCircle.style.display = 'None';
+                loadingAnimator.style.display = 'grid';
             });
 
             // Création des abonnements aux topics
@@ -113,18 +132,45 @@
                 messageType: 'std_msgs/Bool'
             });
 
+
+            // Abonnement au topic /tiago_interact/tts/status
+            const interactStatus = new ROSLIB.Topic({
+                ros: ros,
+                name: '/tiago_interact/stt/status',
+                messageType: 'std_msgs/Bool'
+            });
+
+            interactStatus.subscribe((message) => {
+                console.log("isInteractStatus : " + message.data);
+                if (message.data === true) {
+                    isInteractStatus = true;
+                    // Actions
+                    listenerMsg.textContent = "Je t'écoute :D"
+                    listenTrue.style.display = 'grid';
+                    listenFalse.style.display = 'none';
+
+                } else {
+                    isInteractStatus = false;
+                    // Actions
+                    listenerMsg.textContent = "Je ne t'écoute pas ;)"
+                    listenTrue.style.display = 'none';
+                    listenFalse.style.display = 'grid';
+                }
+            });
+
             // Gestion des messages reçus sur /stt_listener_toggle
             toggleSttListener.subscribe((message) => {
+                console.log("toggleSttListener : " + message.data)
                 if (message.data === true) {
-                    console.log("STT activé via /tiago_interact/stt/status");
                     isSttEnabled = true;
-                    // Afficher la transcription
+
+                    // Actions
                     transcriptionDiv.style.display = 'block';
                     anwsersDiv.style.display = 'None';
                 } else {
-                    console.log("STT désactivé via /tiago_interact/stt/status");
                     isSttEnabled = false;
-                    // Désa ctiver et afficher les bouttons qui sont publier sur un autre topic
+
+                    // Actions
                     transcriptionDiv.style.display = 'None';
                     anwsersDiv.style.display = 'block';
                 }
@@ -228,7 +274,7 @@
     }
 
     body {
-        margin: 0;
+        margin: 0px 20px;
         font-family: 'Arial', sans-serif;
         color: #333;
         background: linear-gradient(135deg, #6a11cb, #2575fc);
@@ -255,11 +301,10 @@
     }
 
     /*  */
-    #transcription {
+
+    #whiteCase {
         /* container */
-        padding: 25px;
-        margin-top: 25px;
-        min-height: 150px;
+        margin-top: 30px;
 
         /* Border */
         border-style: solid;
@@ -277,6 +322,28 @@
         box-shadow: 5px 5px 5px whitesmoke;
     }
 
+    #listener, #transcription {
+        color: white;
+        padding: 10px 10px;
+    }
+
+    #listener {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        justify-content: center;
+        border-bottom-style: solid;
+    }
+
+    #transcription {
+        /* Texte */
+        font-size: 24px;
+        font-weight: bolder;
+        font-style: oblique;
+
+        min-height: 140px;
+    }
+
     .partial {
         color:chartreuse;
         font-style: italic;
@@ -291,7 +358,69 @@
         height: 45px;
         width: 45px;
         border-radius: 50px;
-        background-color: red;
+        background-color: lime;
+    }
+
+    #loader {
+        display: none;
+    }
+
+    /* Loader disconnect */
+
+    .loader {
+        width: 40px;
+        aspect-ratio: 1;
+        display: grid;
+    }
+    .loader::before,
+    .loader::after {    
+        content:"";
+        grid-area: 1/1;
+        --c:no-repeat radial-gradient(farthest-side, red 92%,#0000);
+        background: 
+            var(--c) 50%  0, 
+            var(--c) 50%  100%, 
+            var(--c) 100% 50%, 
+            var(--c) 0    50%;
+        background-size: 12px 12px;
+        animation: l12 1s infinite;
+    }
+    .loader::before {
+        margin: 4px;
+        filter: hue-rotate(45deg);
+        background-size: 8px 8px;
+        animation-timing-function: linear
+    }
+
+    @keyframes l12 { 
+        100%{transform: rotate(.5turn)}
+    }
+
+    /* Loader d'écoute */
+
+    .listen {
+        width: 40px;
+        aspect-ratio: 1;
+        display: grid;
+    }
+    .listen::before,
+    .listen::after {    
+        content:"";
+        grid-area: 1/1;
+        --c:no-repeat radial-gradient(farthest-side, lime 92%,#0000);
+        background: 
+            var(--c) 50%  0, 
+            var(--c) 50%  100%, 
+            var(--c) 100% 50%, 
+            var(--c) 0    50%;
+        background-size: 12px 12px;
+        animation: l12 1s infinite;
+    }
+    .listen::before {
+        margin: 4px;
+        filter: hue-rotate(45deg);
+        background-size: 8px 8px;
+        animation-timing-function: linear
     }
 
     #status, #options {
@@ -306,7 +435,7 @@
         display: none;
         justify-content: center;
         margin: 20px 0px 20px 0px;
-        padding: 10px;
+        padding: 10px 0px;
 
         /* A Voir 
         border-radius: 10px;

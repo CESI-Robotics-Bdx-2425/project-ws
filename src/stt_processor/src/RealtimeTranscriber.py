@@ -42,7 +42,8 @@ class RealtimeTranscriber(threading.Thread):
         rospy.loginfo("En attente des données audio sur le topic /sound...")
     
     def toggle_speaking(self, ros_msg):
-        self.is_speaking = ros_msg
+        print(ros_msg)
+        self.is_speaking = ros_msg.data
     
     def audio_callback(self, data):
         """Callback appelé quand des données audio arrivent du topic ROS"""
@@ -60,16 +61,17 @@ class RealtimeTranscriber(threading.Thread):
                     # Obtenir les données audio de la queue
                     data = self.audio_queue.get(timeout=1)  # timeout pour pouvoir vérifier self.running
                     
-                    if self.rec.AcceptWaveform(data) and not self.is_speaking:
-                        result = json.loads(self.rec.Result())
-                        if result.get("text", "").strip():
-                            message = {"type": "final", "text": result["text"]}
-                            self.full_pub.publish(result['text'])
-                    else:
-                        result = json.loads(self.rec.PartialResult())
-                        if result.get("partial", "").strip():
-                            message = {"type": "partial", "text": result["partial"]}
-                            self.partial_pub.publish(result['partial'])
+                    if not self.is_speaking:
+                        if self.rec.AcceptWaveform(data):
+                            result = json.loads(self.rec.Result())
+                            if result.get("text", "").strip():
+                                message = {"type": "final", "text": result["text"]}
+                                self.full_pub.publish(result['text'])
+                        else:
+                            result = json.loads(self.rec.PartialResult())
+                            if result.get("partial", "").strip():
+                                message = {"type": "partial", "text": result["partial"]}
+                                self.partial_pub.publish(result['partial'])
                 except queue.Empty:
                     continue  # Continuer la boucle si pas de données audio
         except Exception as e:

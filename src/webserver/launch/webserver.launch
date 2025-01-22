@@ -1,0 +1,5 @@
+<launch>
+    <param name="webserver_port" type="int" value="8000" />    
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" />   
+    <node name="WebServer" pkg="webserver" type="WebServer.py" output="screen" />
+</launch>

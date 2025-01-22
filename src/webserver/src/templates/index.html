@@ -29,6 +29,16 @@
         <div id="options">
             <button id="toggle-mic">Micro On/Off</button>
         </div>
+
+        <!-- Affichage des questions-->
+        <div id="container-questions-anwsers">
+            <div id="question-speek-tiago">
+                <div id="question-data"></div>
+            </div>
+            <div id="question-answers">
+                <div id="answers-data"></div>
+            </div>
+        </div>
         
         <!-- Retranscription du texte -->
         <div id="whiteCase">
@@ -53,11 +63,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const hostname = window.location.hostname;
         const scriptUrl = `http://${hostname}:8000/roslib`;
 
-        // Créer une balise <script>
+        // Créer une balise
         const script = document.createElement("script");
         script.src = scriptUrl;
         script.type = "text/javascript";
-        //script.async = true;
 
         // Ajouter des gestionnaires pour le chargement et les erreurs
         script.onload = () => {
@@ -93,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         listenerMsg:        document.getElementById('listener-msg'),
         listenTrue:         document.getElementById('listen-true'),
         listenFalse:        document.getElementById('listen-false'),
+        questionData:       document.getElementById('question-data'),
     };
     
     // Variables Bool
@@ -102,11 +112,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFinalSpan    = null;
     let isSttEnabled        = true;
     let isInteractStatus    = false;
+    let tiagoSay  = null;
 
     // Reconnexion Variables
-    let     reconnectionAttempts      = 5; // Nombre de tentatives de reconnexion
-    const   maxReconnectionAttempts   = 5; // Nombre maximal de tentatives
-    const   reconnectionDelay         = 2000; // Délai entre les tentatives (en millisecondes)
+    let     reconnectionAttempts      = 0; // Nombre de tentatives de reconnexion
+    const   maxReconnectionAttempts   = 200; // Nombre maximal de tentatives
+    const   reconnectionDelay         = 20000; // Délai entre les tentatives (en millisecondes)
     let     countdownInterval         = 20;          // Pour stocker l'intervalle de décompte
     let     connectionCheckInterval   = 5000; // Intervalle de vérification de connexion
 
@@ -122,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
             updateReloadButtonVisibility(true);
             updateStatusDisplay('Connecté', true);
             reconnectionAttempts = 0; // Réinitialiser les tentatives de reconnexion
-            startConnectionCheck();
         });
 
         ros.on('error', () => {
@@ -140,40 +150,73 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const topics = {
-            partial: new ROSLIB.Topic({ ros, name: '/stt/partial', messageType: 'std_msgs/String' }),
-            full: new ROSLIB.Topic({ ros, name: '/stt/full', messageType: 'std_msgs/String' }),
-            toggleStt: new ROSLIB.Topic({ ros, name: '/tiago_interact/stt/status', messageType: 'std_msgs/Bool' }),
-            interactStatus: new ROSLIB.Topic({ ros, name: '/tiago_interact/stt/status', messageType: 'std_msgs/Bool' }),
-            bookList: new ROSLIB.Topic({ros, name: '/name', messageType: 'std_msgs/String'}),
+            stt_partial: new ROSLIB.Topic({ ros,name: '/stt/partial', messageType: 'std_msgs/String' }),
+            stt_full: new ROSLIB.Topic({ ros,name: '/stt/full', messageType: 'std_msgs/String' }),
+            tiago_interact_stt_status: new ROSLIB.Topic({ ros,name: '/tiago_interact/stt/status', messageType: 'std_msgs/Bool' }),
+            tiago_asker_question_possible_answers: new ROSLIB.Topic({ros,name: '/tiago_asker/question/possible_answers', messageType: 'std_msgs/String'}),
+            tts_goal : new ROSLIB.Topic({ros,name: '/tts/goal', messageType: 'pal_interaction_msgs/TtsActionGoal'}),
+            tts_result : new ROSLIB.Topic({ros,name: '/tts/result', messageType: 'pal_interaction_msgs/TtsActionResult'})
         };
 
-        topics.interactStatus.subscribe((message) => updateListenerDisplay(message.data));
+        topics.tiago_interact_stt_status.subscribe((message) => updateListenerDisplay(message.data));
         
-        topics.toggleStt.subscribe((message) => {
+        topics.tiago_interact_stt_status.subscribe((message) => {
             isSttEnabled = message.data;
             elements.transcriptionDiv.style.display = isSttEnabled ? 'block' : 'none';
             elements.answersDiv.style.display = isSttEnabled ? 'none' : 'block';
         });
         
-        topics.partial.subscribe(handlePartialMessage);
+        topics.stt_partial.subscribe(handlePartialMessage);
 
-        topics.full.subscribe(handleFullMessage);
+        topics.stt_full.subscribe(handleFullMessage);
 
-        topics.bookList.subscribe(uptadeBookList);
+        // subscribe au topic de Question / Réponse
+        topics.tiago_asker_question_possible_answers.subscribe(loadAnswersAndDisplay);
+        topics.tts_goal.subscribe(loadAskTiagoRealTime);
+        topics.tts_result.subscribe(onEndspeak)
     };
 
-    // Vérification périodique de la connexion
+    // Gestions du tts et des Réponces
+    const loadAskTiagoRealTime = (message) => {
+        updateListenerDisplay(false);
+        console.log(message.goal.rawtext.text);
+        tiagoSay = document.createElement('span');      
+        tiagoSay.setAttribute('id', 'retanscript');
+        elements.questionData.appendChild(tiagoSay);
+        tiagoSay.textContent = message.goal.rawtext.text;
+    };
+
+    // Détections quand Tiago a fini de parler
+    const onEndspeak = (message) => {
+        console.log("Retrait du message");
+        
+        // Rechercher le dernier message ajouté pour Tiago et le retirer
+        const lastTiagoMessage = document.querySelector('#retanscript:last-child');
+        
+        if (lastTiagoMessage) {
+            // Si un message de Tiago est présent, le retirer du DOM
+            lastTiagoMessage.remove();
+            updateListenerDisplay(true);
+        }
+    };
+
+    // Affichage des réponces possible
+    const loadAnswersAndDisplay = (anwsers) => {
+
+    };
+
     const startConnectionCheck = () => {
-        console.log("== startConnectionCheck ==");
         connectionCheckInterval = setInterval(() => {
+            // Vérifie si la connexion est toujours active
             if (!ros || !ros.isConnected) {
                 console.warn("Connexion ROS perdue. Tentative de reconnexion...");
-                updateStatusDisplay('Connexion perdue...', false);
-                attemptReconnection();
+                let msg = "Tentative : " + reconnectionAttempts + " / " + maxReconnectionAttempts;
+                updateStatusDisplay(msg, false);
+                attemptReconnection(); // Tentative de reconnexion si la connexion est perdue
             } else {
                 console.log("Vérification de connexion : Connecté.");
             }
-        }, 5000); // Vérifie toutes les 5 secondes
+        }, connectionCheckInterval); // Vérification toutes les 5 secondes
     };
 
     // Arrêter la vérification de connexion
@@ -181,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(connectionCheckInterval);
     };
 
-    // Tentative de reconnexion
+    // Tentative de reconnexion avec une limite
     const attemptReconnection = () => {
         if (reconnectionAttempts >= maxReconnectionAttempts) {
             updateStatusDisplay('Échec de reconnexion après plusieurs tentatives.', false);
@@ -190,25 +233,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         reconnectionAttempts++;
+        console.log("reconnectionAttempts : " + reconnectionAttempts + " / maxReconnectionAttempts : " + maxReconnectionAttempts);
+        
+        // Définir un délai avant la prochaine tentative de reconnexion
         setTimeout(() => {
             connectToRos();
-        }, reconnectionDelay);
+        }, reconnectionDelay); // Essayer à nouveau après 20 secondes
     };
-
-    // Affichages des lives
-    const uptadeBookList = (data) => {
-        console.log(data);
-    }
 
     // Affichage / masquage du bouton Reconnexion
     const updateReloadButtonVisibility = (isConnected) => {
-        console.log("updateReloadButtonVisibility : " + updateReloadButtonVisibility);
         elements.reloadBtn.style.display = isConnected ? 'none' : 'block';
     };
 
     // Mise à jour des éléments d'état
     const updateStatusDisplay = (status, isConnected) => {
-        console.log("updateStatusDisplay : " + isConnected);
         elements.statusDiv.textContent = `Status: ${status}`;
         elements.statusCircle.style.display = isConnected ? 'grid' : 'none';
         elements.loadingAnimator.style.display = isConnected ? 'none' : 'grid';
@@ -233,7 +272,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Gestion des messages STT
     const handlePartialMessage = (message) => {
-        // console.log("handlePartialMessage : " + handlePartialMessage);
         if (!isSttEnabled) return;
         if (!partialSpan) {
             partialSpan = document.createElement('span');
@@ -244,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const handleFullMessage = (message) => {
-        // console.log("handleFullMessage : " + handleFullMessage);
         if (!isSttEnabled) return;
         if (partialSpan) {
             partialSpan.remove();
@@ -253,13 +290,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentFinalSpan) {
             if (previousFinalSpan) previousFinalSpan.remove();
             previousFinalSpan = currentFinalSpan;
-            previousFinalSpan.className = 'previous-final';
+            previousFinalSpan.className = 'partial';
         }
+
+        // Ajouter un <br> si une condition est remplie
+        if (/* votre condition ici, par exemple, si ce n'est pas la première ligne */ elements.transcriptionDiv.children.length > 0) {
+            const lineBreak = document.createElement('br');
+            elements.transcriptionDiv.appendChild(lineBreak);
+        }
+
         currentFinalSpan = document.createElement('span');
         currentFinalSpan.className = 'final';
         currentFinalSpan.textContent = message.data;
         elements.transcriptionDiv.appendChild(currentFinalSpan);
     };
+
+
 
     // Gestion des événements
     elements.reloadBtn.addEventListener('click', connectToRos);
@@ -328,6 +374,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /*  */
 
+    #retanscript{
+        /* Text */
+        font-family: sans-serif;
+        color: white;
+        font-size: 24px;
+        font-weight: bolder;
+    }
+
     #whiteCase {
         /* container */
         margin-top: 30px;
@@ -368,6 +422,12 @@ document.addEventListener('DOMContentLoaded', () => {
         font-style: oblique;
 
         min-height: 140px;
+    }
+
+    .previous-final{
+        color: white;
+        font-style: italic;
+        padding-left: 7px;
     }
 
     .partial {
@@ -450,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
         animation-timing-function: linear
     }
 
-    #status, #options {
+    #status, #options, #container-questions-anwsers {
         display: flex;
         justify-content: flex-start;
         align-self: flex-start;
@@ -458,20 +518,24 @@ document.addEventListener('DOMContentLoaded', () => {
         gap: 10px;
     }
 
+    #container-questions-anwsers {
+        /* Texte */
+        text-align: left;
+        color: white;
+        font-size: 24px;
+        font-weight: 501;
+        
+        /* Container */
+        margin-top: 20px;
+        flex-direction: column;
+        min-height: 50px;
+    }
+
     #options {
         display: none;
         justify-content: center;
         margin: 20px 0px 20px 0px;
         padding: 10px 0px;
-
-        /* A Voir 
-        border-radius: 10px;
-        border-style: solid;
-        border-width: 3px;
-        border-color: #00c6ff;
-        box-shadow: 5px 5px 5px #00c6ff;
-
-        /* border: solid;*/
     }
 
     #settings {

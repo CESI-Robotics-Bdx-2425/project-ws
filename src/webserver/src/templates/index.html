@@ -8,6 +8,9 @@
         <div>
             <h1>Transcription en temps réel</h1>
         </div>
+
+
+        <!-- Affichage des Status dans le front -->
         <div id="status">
             <div id="circle"></div>
             <div class="loader" id="loading"></div>
@@ -21,10 +24,13 @@
                 </div>
             </div>
         </div>
+
+        <!-- Bouttons des options -->
         <div id="options">
             <button id="toggle-mic">Micro On/Off</button>
         </div>
-
+        
+        <!-- Retranscription du texte -->
         <div id="whiteCase">
             <div id="listener">
                 <div id="listener-msg">Transcription libre</div>
@@ -33,6 +39,7 @@
             </div>
             <div id="transcription"></div>
         </div>
+
         <div id="anwsers"></div>
         <div id="credits">© Made by A5 2024-2025</div>
     </body>
@@ -40,6 +47,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    let ros;
     function importRoslib() {
         // Récupérer le hostname de manière dynamique
         const hostname = window.location.hostname;
@@ -59,6 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 url: `ws://${hostname}:9090`
             });
             console.log("Connexion ROS initialisée !");
+            // updateStatusDisplay('Connecté', true);
+            connectToRos();
         };
 
         script.onerror = () => {
@@ -68,50 +78,65 @@ document.addEventListener('DOMContentLoaded', () => {
         // Ajouter le script dans la balise <head>
         document.head.appendChild(script);
     }
+
     // Variables globales
     const elements = {
-        transcriptionDiv: document.getElementById('transcription'),
-        answersDiv: document.getElementById('anwsers'),
-        statusDiv: document.getElementById('status-text'),
-        reloadBtn: document.getElementById('reload-btn'),
-        statusCircle: document.getElementById('circle'),
-        toggleMic: document.getElementById('toggle-mic'),
-        settingsBtn: document.getElementById('settings-btn'),
-        optionsDiv: document.getElementById('options'),
-        loadingAnimator: document.getElementById('loading'),
-        listenerMsg: document.getElementById('listener-msg'),
-        listenTrue: document.getElementById('listen-true'),
-        listenFalse: document.getElementById('listen-false'),
+        transcriptionDiv:   document.getElementById('transcription'),
+        answersDiv:         document.getElementById('anwsers'),
+        statusDiv:          document.getElementById('status-text'),
+        reloadBtn:          document.getElementById('reload-btn'),
+        statusCircle:       document.getElementById('circle'),
+        toggleMic:          document.getElementById('toggle-mic'),
+        settingsBtn:        document.getElementById('settings-btn'),
+        optionsDiv:         document.getElementById('options'),
+        loadingAnimator:    document.getElementById('loading'),
+        listenerMsg:        document.getElementById('listener-msg'),
+        listenTrue:         document.getElementById('listen-true'),
+        listenFalse:        document.getElementById('listen-false'),
     };
-
-    let toggleMicValue = true;
-    let partialSpan = null;
-    let previousFinalSpan = null;
-    let currentFinalSpan = null;
-    let isSttEnabled = true;
-    let isInteractStatus = false;
-
     
+    // Variables Bool
+    let toggleMicValue      = true;
+    let partialSpan         = null;
+    let previousFinalSpan   = null;
+    let currentFinalSpan    = null;
+    let isSttEnabled        = true;
+    let isInteractStatus    = false;
+
+    // Reconnexion Variables
+    let     reconnectionAttempts      = 5; // Nombre de tentatives de reconnexion
+    const   maxReconnectionAttempts   = 5; // Nombre maximal de tentatives
+    const   reconnectionDelay         = 2000; // Délai entre les tentatives (en millisecondes)
+    let     countdownInterval         = 20;          // Pour stocker l'intervalle de décompte
+    let     connectionCheckInterval   = 5000; // Intervalle de vérification de connexion
 
     // Connexion ROS et abonnements
     const connectToRos = () => {
-        const ros = new ROSLIB.Ros({url: `ws://${window.location.hostname}:9090`});
+
+        ros = new ROSLIB.Ros({url: `ws://${window.location.hostname}:9090`});
 
         updateStatusDisplay('Connexion en cours...', false);
 
         ros.on('connection', () => {
+            console.log("Connexion ROS réussie !");
             updateReloadButtonVisibility(true);
             updateStatusDisplay('Connecté', true);
+            reconnectionAttempts = 0; // Réinitialiser les tentatives de reconnexion
+            startConnectionCheck();
         });
 
         ros.on('error', () => {
+            console.error("Erreur de connexion ROS.");
             updateReloadButtonVisibility(false);
             updateStatusDisplay('Erreur de connexion', false);
+            attemptReconnection(); // Lancer une tentative de reconnexion
         });
 
         ros.on('close', () => {
+            console.warn("Connexion ROS fermée.");
             updateReloadButtonVisibility(false);
             updateStatusDisplay('Déconnecté...', false);
+            attemptReconnection(); // Lancer une tentative de reconnexion
         });
 
         const topics = {
@@ -119,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
             full: new ROSLIB.Topic({ ros, name: '/stt/full', messageType: 'std_msgs/String' }),
             toggleStt: new ROSLIB.Topic({ ros, name: '/tiago_interact/stt/status', messageType: 'std_msgs/Bool' }),
             interactStatus: new ROSLIB.Topic({ ros, name: '/tiago_interact/stt/status', messageType: 'std_msgs/Bool' }),
+            bookList: new ROSLIB.Topic({ros, name: '/name', messageType: 'std_msgs/String'}),
         };
 
         topics.interactStatus.subscribe((message) => updateListenerDisplay(message.data));
@@ -130,9 +156,49 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         topics.partial.subscribe(handlePartialMessage);
-        
+
         topics.full.subscribe(handleFullMessage);
+
+        topics.bookList.subscribe(uptadeBookList);
     };
+
+    // Vérification périodique de la connexion
+    const startConnectionCheck = () => {
+        console.log("== startConnectionCheck ==");
+        connectionCheckInterval = setInterval(() => {
+            if (!ros || !ros.isConnected) {
+                console.warn("Connexion ROS perdue. Tentative de reconnexion...");
+                updateStatusDisplay('Connexion perdue...', false);
+                attemptReconnection();
+            } else {
+                console.log("Vérification de connexion : Connecté.");
+            }
+        }, 5000); // Vérifie toutes les 5 secondes
+    };
+
+    // Arrêter la vérification de connexion
+    const stopConnectionCheck = () => {
+        clearInterval(connectionCheckInterval);
+    };
+
+    // Tentative de reconnexion
+    const attemptReconnection = () => {
+        if (reconnectionAttempts >= maxReconnectionAttempts) {
+            updateStatusDisplay('Échec de reconnexion après plusieurs tentatives.', false);
+            stopConnectionCheck(); // Arrêter la vérification si le max est atteint
+            return;
+        }
+
+        reconnectionAttempts++;
+        setTimeout(() => {
+            connectToRos();
+        }, reconnectionDelay);
+    };
+
+    // Affichages des lives
+    const uptadeBookList = (data) => {
+        console.log(data);
+    }
 
     // Affichage / masquage du bouton Reconnexion
     const updateReloadButtonVisibility = (isConnected) => {
@@ -146,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.statusDiv.textContent = `Status: ${status}`;
         elements.statusCircle.style.display = isConnected ? 'grid' : 'none';
         elements.loadingAnimator.style.display = isConnected ? 'none' : 'grid';
+        elements.reloadBtn.style.display = isConnected ? 'none' : 'block';
     };
 
     // Mise à jour de l'écouteur
@@ -163,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.listenFalse.style.display = isListening ? 'none' : 'grid';
         }
     };
-
 
     // Gestion des messages STT
     const handlePartialMessage = (message) => {
@@ -200,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elements.toggleMic.addEventListener('click', () => {
         elements.toggleMic.disabled = true;
-        setTimeout(() => (elements.toggleMic.disabled = false), 5000);
+        setTimeout(() => (elements.toggleMic.disabled = false), 3000);
 
         toggleMicValue = !toggleMicValue;
         elements.toggleMic.style.backgroundColor = toggleMicValue ? 'lime' : 'red';
@@ -211,6 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
             name: '/tiago_interact/stt/toggle',
             serviceType: 'std_srvs/Empty',
         });
+
         micService.callService(new ROSLIB.ServiceRequest(), () => console.log('Service appelé avec succès'));
     });
 
@@ -220,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialisation
     importRoslib();
-    // connectToRos();
+    
 });
 </script>
 
@@ -236,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
         margin: 0px 20px;
         font-family: 'Arial', sans-serif;
         color: #333;
-        background: linear-gradient(135deg, #6a11cb, #2575fc);
+        background: linear-gradient(135deg, #6a89cc, #a29bfe);
         line-height: 1.6;
         height: 100vh; /* Ajouté */
         overflow: hidden; /* Ajouté */

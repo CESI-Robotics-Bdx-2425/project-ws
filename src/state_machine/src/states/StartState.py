@@ -5,7 +5,7 @@ from utils.TTS import TextToSpeech
 
 class StartState(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['scanBook'])
+        smach.State.__init__(self, outcomes=['scanTable'])
         self.services=['/book_detector','/tiago_interact/tts','/tiago_asker']
         
         
@@ -16,4 +16,4 @@ class StartState(smach.State):
             rospy.loginfo(f"le service {s} est demarré")
         rospy.loginfo("Etat de départ : Passage à l'état Scan.")
         self.TTS.say('Je démarre la calibration. Merci de ne plus modifier mon environnement')
-        return 'scanBook'
+        return 'scanTable'

@@ -2,29 +2,29 @@
 import rospy
 import smach
 from utils.TTS import TextToSpeech
+from pick_and_give.srv import PickAndGive, PickAndGiveRequest
 
 class TakeState(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['idle','error'],input_keys=['sm_previous_state'],output_keys=['sm_previous_state'])
-        self.service_name = 'book_detector'
+        smach.State.__init__(self, outcomes=['idle','error'],input_keys=['sm_previous_state','flyer_id'],output_keys=['sm_previous_state'])
+        self.service_name = 'pick_and_place'
         self.tts = TextToSpeech()
 
 
     def execute(self, userdata):
-        rospy.loginfo("Etat Scan : Appel au service 'book_detector'.")
-        userdata.sm_previous_state = 'Scan Book'
+        rospy.loginfo("Etat Scan : Appel au service 'pick_and_place'.")
+        userdata.sm_previous_state = 'pick_and_place'
+
         # Attendre que le service soit disponible
         rospy.wait_for_service(self.service_name)
+                # Création du proxy pour le service
+        pick_and_place = rospy.ServiceProxy("pick_and_place", PickAndGive)
 
         try:
-            scan_book = rospy.ServiceProxy(self.service_name, FindAruco)
+            Pick = rospy.ServiceProxy(self.service_name)
             for flyer, aruco_id in self.flyers.items():
                 # Créer un client de service et appeler le service
-                self.tts.say(f"Je lance la recherche du flyer {flyer + 1}")
-                r = scan_book(int(aruco_id))
-                if (r.coordinates.pose.position.x == 0 and r.coordinates.pose.position.y == 0 and r.coordinates.pose.position.z ==0):
-                    self.tts.say(f"je n'ai pas trouvé le flyer {flyer + 1}")
-                    return "error"
+                r = Pick()
                 rospy.sleep(3)
                 rospy.loginfo("Etat Scan : Réponse du service reçue, passage à l'état Listen.")
             self.tts.say("Les 3 flyers sont bien présents dans mon environnement")
@@ -32,9 +32,4 @@ class TakeState(smach.State):
 
         except rospy.ServiceException as e:
             rospy.logerr(f"Erreur lors de l'appel au service 'table_detector' : {e}")
-            # Vérifier si le nombre maximum d'erreurs a été atteint
-            if self.error_count >= 3:
-                rospy.logerr("Nombre maximum d'erreurs atteint. Passage à l'état Error.")
-                return "error"
-            else:
-                return "idle"
+            return "error"

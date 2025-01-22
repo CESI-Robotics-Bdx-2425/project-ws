@@ -23,17 +23,6 @@ h1 {
     text-align: center;
 }
 
-/* Navigation */
-nav {
-    margin: 20px 0;
-}
-
-nav a {
-    color: white;
-    text-decoration: none;
-    margin: 0 15px;
-}
-
 /* Texte retranscrit par Tiago */
 #retanscript {
     font-family: sans-serif;
@@ -188,4 +177,28 @@ nav a {
 #credits {
     margin-top: 25px;
     font-style: italic;
+}
+
+#answers-data {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.answer-element {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: #333;
+    color: white;
+}
+
+#status-text {
+    color: white;
+    font-size: 24px;
+    font-weight: 501;
 }

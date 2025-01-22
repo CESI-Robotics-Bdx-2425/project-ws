@@ -57,7 +57,7 @@ class WebServer():
         app.router.add_get('/', self.handle_index)
         app.router.add_get('/roslib', self.handle_roslib)
         app.router.add_get('/styles', self.handle_styles)
-        app.router.add_get('/leJcleS', self.handle_js)
+        app.router.add_get('/js', self.handle_js)
         # Configurer le serveur HTTP
         runner = web.AppRunner(app)
         await runner.setup()

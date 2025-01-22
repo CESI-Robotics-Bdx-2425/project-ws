@@ -1,5 +1,4 @@
 function leJcleS() {
-
   let hostname = window.location.hostname;
 
   let ros;
@@ -87,7 +86,7 @@ function leJcleS() {
   // Variables globales
   const elements = {
     transcriptionDiv: document.getElementById("transcription"),
-    answersDiv: document.getElementById("anwsers"),
+    answersDiv: document.getElementById("answers-data"),
     statusDiv: document.getElementById("status-text"),
     reloadBtn: document.getElementById("reload-btn"),
     statusCircle: document.getElementById("circle"),
@@ -99,6 +98,7 @@ function leJcleS() {
     listenTrue: document.getElementById("listen-true"),
     listenFalse: document.getElementById("listen-false"),
     questionData: document.getElementById("question-data"),
+
   };
 
   // Connexion ROS et abonnements
@@ -207,8 +207,30 @@ function leJcleS() {
     }
   };
 
-  // Affichage des réponces possible
-  const loadAnswersAndDisplay = (anwsers) => {};
+  const loadAnswersAndDisplay = (answers) => {
+
+    // Vider le contenu actuel du div (au cas où il y aurait des réponses précédentes)
+    elements.answersDiv.innerHTML = "";
+
+    // Vérifier si les réponses existent
+    if (answers && answers.data) {
+      const answerList = answers.data.split(","); // Si les réponses sont séparées par des virgules, les diviser en un tableau
+
+      // Pour chaque réponse, créer un élément <div> et l'ajouter au div principal
+      answerList.forEach((answer) => {
+        // Créer un élément <div> pour chaque réponse
+        const answerElement = document.createElement("div");
+        answerElement.className = "answer-element"; // Tu peux ajouter une classe CSS pour le style
+        answerElement.textContent = answer.trim(); // Ajouter la réponse comme texte
+
+        // Ajouter l'élément créé au div des réponses
+        answersDiv.appendChild(answerElement);
+      });
+    } else {
+      // Si aucune réponse n'est reçue ou disponible, afficher un message
+      elements.answersDiv.textContent = "Aucune réponse disponible.";
+    }
+  };
 
   const startConnectionCheck = () => {
     connectionCheckInterval = setInterval(() => {
@@ -314,14 +336,8 @@ function leJcleS() {
       previousFinalSpan.className = "partial";
     }
 
-    // Ajouter un <br> si une condition est remplie
-    if (
-      /* votre condition ici, par exemple, si ce n'est pas la première ligne */ elements
-        .transcriptionDiv.children.length > 0
-    ) {
-      const lineBreak = document.createElement("br");
-      elements.transcriptionDiv.appendChild(lineBreak);
-    }
+    // Ajouter un <br> si un message précédent existe
+    // if (previousFinalSpan) { const lineBreak = document.createElement("br"); elements.transcriptionDiv.appendChild(lineBreak); }
 
     currentFinalSpan = document.createElement("span");
     currentFinalSpan.className = "final";
@@ -358,6 +374,6 @@ function leJcleS() {
 
   // Lancer la connexion
   startup();
-};
+}
 // quand le fichier est chargé, on lance le script
 leJcleS();

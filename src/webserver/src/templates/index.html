@@ -5,10 +5,10 @@
         <title>Transcription en temps réel</title>
         <script>
             const hostname=window.location.hostname;document.addEventListener("DOMContentLoaded",()=>{
-                const script=document.createElement("script");script.src=`http://${hostname}:8000/leJcleS`;
+                const script=document.createElement("script");script.src=`http://${hostname}:8000/js`;
                 script.type="text/javascript";
-                script.onload=()=>{console.log("J c'est le S de Tiago get !");resolve(true)};
-                script.onerror=()=>{console.error("Erreur lors du chargement de J c'est le S de tiago ++.");reject(false)};
+                //script.onload=()=>{console.log("J c'est le S de Tiago get !");resolve(true)};
+                //script.onerror=()=>{console.error("Erreur lors du chargement de J c'est le S de tiago ++.");reject(false)};
                 document.head.appendChild(script)});
         </script>
     </head>

@@ -6,7 +6,7 @@ from utils.TTS import TextToSpeech
 
 class BookScanState(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['idle'],input_keys=['sm_previous_state'],output_keys=['sm_previous_state'])
+        smach.State.__init__(self, outcomes=['talk','error'],input_keys=['sm_previous_state'],output_keys=['sm_previous_state'])
         self.service_name = 'book_detector'
         self.error_count = 0  # Initialiser le compteur d'erreurs
         self.tts = TextToSpeech()
@@ -31,18 +31,17 @@ class BookScanState(smach.State):
                 r = scan_book(int(aruco_id))
                 if (r.coordinates.pose.position.x == 0 and r.coordinates.pose.position.y == 0 and r.coordinates.pose.position.z ==0):
                     self.tts.say(f"je n'ai pas trouvé le flyer {flyer + 1}")
-                    rospy.sleep(5)
                     return "error"
                 rospy.sleep(3)
                 rospy.loginfo("Etat Scan : Réponse du service reçue, passage à l'état Listen.")
             self.tts.say("Les 3 flyers sont bien présents dans mon environnement")
-            return "idle"
+            return "talk"
 
         except rospy.ServiceException as e:
             rospy.logerr(f"Erreur lors de l'appel au service 'table_detector' : {e}")
             # Vérifier si le nombre maximum d'erreurs a été atteint
             if self.error_count >= 3:
                 rospy.logerr("Nombre maximum d'erreurs atteint. Passage à l'état Error.")
-                return "idle"
+                return "error"
             else:
                 return "idle"

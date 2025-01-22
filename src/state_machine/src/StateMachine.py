@@ -10,6 +10,7 @@ from states.ScanTableState import ScanTableState
 from states.StartState import StartState
 from states.StateScanBook import BookScanState
 from states.ErrorState import ErrorState
+from states.TalkState import TalkState
 
 def main():
     rospy.init_node("state_machine_example")
@@ -19,9 +20,10 @@ def main():
     sm.userdata.sm_previous_state = 'Start'
     
     with sm:
-        smach.StateMachine.add('START', StartState(), transitions={'scanTable': 'SCANTABLE'})
+        smach.StateMachine.add('START', StartState(), transitions={'scanBook': 'SCANBOOK'})
         smach.StateMachine.add('SCANTABLE', ScanTableState(), transitions={'scanBook': 'SCANBOOK', 'error':'ERROR'})
-        smach.StateMachine.add('SCANBOOK', BookScanState(), transitions={'idle': 'IDLE'})
+        smach.StateMachine.add('SCANBOOK', BookScanState(), transitions={'talk': 'TALK','error':'ERROR'})
+        smach.StateMachine.add('TALK', TalkState(), transitions={'idle': 'IDLE','error':'ERROR'})
         smach.StateMachine.add('IDLE', IdleState(), transitions={})
         smach.StateMachine.add('ERROR', ErrorState(), transitions={'idle': 'IDLE'})
 

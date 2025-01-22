@@ -9,7 +9,7 @@ from states.IdleState import IdleState
 from states.ScanTableState import ScanTableState
 from states.StartState import StartState
 from states.StateScanBook import BookScanState
-from states.StateScanBook2 import BookScan2State
+from states.StateScanBook2 import BookScanState2
 from states.ErrorState import ErrorState
 from states.TalkState import TalkState
 from states.TakeState import TakeState
@@ -21,17 +21,17 @@ def main():
     sm = smach.StateMachine(outcomes=['DONE','EXIT'])
     sm.userdata.sm_previous_state = 'Start'
     sm.userdata.flyer_id = 0
-    sm.userdata.flyer_pos
+    sm.userdata.flyer_pos = None
     
     with sm:
         smach.StateMachine.add('START', StartState(), transitions={'scanTable': 'SCANTABLE'})
         smach.StateMachine.add('SCANTABLE', ScanTableState(), transitions={'scanBook': 'SCANBOOK', 'error':'ERROR'})
         smach.StateMachine.add('SCANBOOK', BookScanState(), transitions={'idle': 'IDLE','error':'ERROR'})
         smach.StateMachine.add('TALK', TalkState(), transitions={'scanBook2': 'SCANBOOK2','idle':'IDLE','error':'ERROR'})
-        smach.StateMachine.add('SCANBOOK2', BookScan2State(), transitions={'idle': 'IDLE','error':'ERROR'})
+        smach.StateMachine.add('SCANBOOK2', BookScanState2(), transitions={'take': 'TAKE','error':'ERROR'})
         smach.StateMachine.add('TAKE', TakeState(), transitions={'idle': 'IDLE','error':'ERROR'})
 
-        smach.StateMachine.add('IDLE', IdleState(), transitions={'talk':'TALK'})
+        smach.StateMachine.add('IDLE', IdleState(), transitions={'talk':'TALK','idle':'IDLE'})
         smach.StateMachine.add('ERROR', ErrorState(), transitions={'idle': 'IDLE'})
 
     # Activer le serveur d'introspection SMACH

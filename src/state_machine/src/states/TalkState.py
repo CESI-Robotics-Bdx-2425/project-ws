@@ -6,7 +6,7 @@ from tiago_asker.srv import TiagoAskerAnswer, TiagoAskerService
 
 class TalkState(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['take','idle','error'],input_keys=['sm_previous_state','flyer_id'],output_keys=['sm_previous_state','flyer_id'])
+        smach.State.__init__(self, outcomes=['scanBook2','idle','error'],input_keys=['sm_previous_state','flyer_id'],output_keys=['sm_previous_state','flyer_id'])
         self.service_name = '/tiago_asker'
         self.error_count = 0  # Initialiser le compteur d'erreurs
         self.tts = TextToSpeech()
@@ -29,10 +29,8 @@ class TalkState(smach.State):
             userdata.flyer_id = r.flyer_id
             if r.flyer_id == 3: 
                 return "idle"
-
             rospy.loginfo(f"Le flyer_id retourné est : {r}")
-            rospy.sleep(5)
-            return "take"
+            return "scanBook2"
         except rospy.ServiceException as e:
             rospy.logerr(f"Erreur lors de l'appel au service '{self.service_name}' : {e}")
             return "error"

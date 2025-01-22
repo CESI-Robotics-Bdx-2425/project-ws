@@ -1,0 +1,3 @@
+int8 aruco_id
+---
+geometry_msgs/PoseStamped coordinates

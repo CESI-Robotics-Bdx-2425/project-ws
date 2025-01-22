@@ -1,0 +1,94 @@
+{
+    "intro": [
+        "Bonjour, je suis TIAGO le robot, je vais vous poser quelques questions pour mieux vous connaître et vous guider parmi les formations que nous proposons.Je vais maintenant vous poser une série de questions afin de déterminer si vous comptez faire une formation chez nous en cursus ingénieur, Mastère professionnel ou Bachelor spécialisé",
+        "Bonjour et bienvenue au CESI, je suis TIAGO le robot, je vais vous poser quelques questions pour mieux vous connaître et vous guider parmi les formations que nous proposons. Je vais maintenant vous poser une série de questions afin de déterminer si vous comptez faire une formation chez nous en cursus ingénieur, Mastère professionnel ou Bachelor spécialisé"
+    ],
+    "questions": [
+        {
+            "type": "question_bac",
+            "question": "Avez-vous le baccalauréat ?",
+            "responses": {
+                "oui": "question_bac_plus_2",
+                "non": "question_science"
+            }
+        },
+        {
+            "type": "question_bac_plus_2",
+            "question": "Avez-vous ou êtes-vous en train de passer un Bac+2 ?",
+            "responses": {
+                "oui": "question_bac_plus_3",
+                "non": "question_science"
+            }
+        },
+        {
+            "type": "question_bac_plus_3",
+            "question": "Êtes-vous en train ou avez-vous prévu de suivre des études pour avoir un niveau BAC + 3 ?",
+            "responses": {
+                "oui": "question_ingenieur",
+                "non": "question_science"
+            }
+        },
+        {
+            "type": "question_ingenieur",
+            "question": "Êtes-vous intéressé par une formation d'ingénieur ?",
+            "responses": {
+                "oui": "result_ingenieur",
+                "non": "question_alternance"
+            }
+        },
+        {
+            "type": "question_alternance",
+            "question": "Avez-vous prévu de suivre des études en alternance pour avoir un bac+5 ?",
+            "responses": {
+                "oui": "result_mastere_pro",
+                "non": "result_fail"
+            }
+        },
+        {
+            "type": "question_science",
+            "question": "Avez-vous une appétence pour les matières scientifiques ?",
+            "responses": {
+                "oui": "question_ingenieur_2",
+                "non": "question_bac_plus_3"
+            }
+        },
+        {
+            "type": "question_ingenieur_2",
+            "question": "Êtes-vous intéressé par une formation d'ingénieur ?",
+            "responses": {
+                "oui": "result_ingenieur",
+                "non": "question_bachelor_spe"
+            }
+        },
+        {
+            "type": "question_bachelor_spe",
+            "question": "Avez-vous prévu de suivre des études en alternance pour avoir un bac+2 ou un bac+3 ?",
+            "responses": {
+                "oui": "result_bachelor_spe",
+                "non": "result_fail"
+            }
+        }
+    ],
+    "results": [
+        {
+            "type": "result_ingenieur",
+            "sentence": "Le programme Grande École en 5 ans correspond à vos attentes. Consultez cette brochure pour plus d'informations.",
+            "flyer_id": 0
+        },
+        {
+            "type": "result_mastere_pro",
+            "sentence": "Je vous conseil le programme de Mastère professionnel. Vous trouverez les détails dans cette brochure.",
+            "flyer_id": 1
+        },
+        {
+            "type": "result_bachelor_spe",
+            "sentence": "Nous vous recommandons le programme Bachelor en spécialité. Vous trouverez les détails dans cette brochure.",
+            "flyer_id": 2
+        },
+        {
+            "type": "result_fail",
+            "sentence": "Je ne peux malheureusement pas vous aider, veuillez demander des renseignements au personnel du CESI",
+            "flyer_id": 3
+        }
+    ]
+}

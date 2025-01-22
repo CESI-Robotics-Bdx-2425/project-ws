@@ -1,0 +1,15 @@
+<launch>
+    <arg name="marker_length" default="0.038" />
+    <arg name="scan_limit" default="3" />
+    <arg name="matrix_file" default="$(find book_detector)/config/matrix.npy" />
+    <arg name="coefficients_file" default="$(find book_detector)/config/coefficients.npy" />
+    <arg name="aruco_matrix" default="$(find book_detector)/config/aruco.npy" />
+
+    <node name="BookDetector" pkg="book_detector" type="ArucoPosition.py" output="screen">
+        <param name="marker_length" value="$(arg marker_length)" />
+        <param name="scan_limit" value="$(arg scan_limit)" />
+        <param name="matrix_file" value="$(arg matrix_file)" />
+        <param name="coefficients_file" value="$(arg coefficients_file)" />
+        <param name="aruco_matrix" value="$(arg aruco_matrix)" />
+    </node>
+</launch>

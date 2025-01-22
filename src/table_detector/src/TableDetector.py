@@ -11,22 +11,12 @@ from moveit_commander import PlanningSceneInterface, RobotCommander
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import String
 from std_srvs.srv import Empty, EmptyResponse
+import table_detector.srv as c_srv
 from scipy.spatial.transform import Rotation as R
 
 # Define ArUco dictionary and parameters
 ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_1000)
 DETECTOR_PARAMETERS = cv2.aruco.DetectorParameters()
-
-# Camera calibration parameters
-D = np.array([0.03428809964086624, -0.11761127959914759, -0.004087049185391351, 0.00022993438231999193, 0.0])
-K = np.array([
-    522.0592726819208, 0.0, 327.1122193418259,
-    0.0, 522.1943972439309, 228.49840496340164,
-    0.0, 0.0, 1.0
-]).reshape((3, 3))
-
-# Constants
-MARKER_LENGTH = 0.04  # Marker size in meters
 
 class TableDetector:
     def __init__(self):
@@ -34,25 +24,22 @@ class TableDetector:
         self.depth_image = None
         self.cam_image = None
         self.aruco_detected = False
-        self.detected_positions = []
-        self.ARUCO_TARGET_IDS = [4, 1]  # Target markers to detect
+        self.detected_positions = []        
 
         # Head movement configuration
         self.head_trajectory = JointTrajectory()
         self.head_trajectory.joint_names = ['head_1_joint', 'head_2_joint']
         self.current_position = 0.0
         self.direction_multiplier = 1
+        self.scan_count = 0
 
         # Initialize ROS node
         rospy.init_node('table_detector')
         rospy.loginfo('TableDetector node initialized')
-
-        # Publishers and subscribers
-        self.head_pub = rospy.Publisher('/head_controller/command', JointTrajectory, queue_size=10)
-        self.result_pub = rospy.Publisher('/table_detector/result', String, queue_size=10)
-        rospy.Subscriber("/xtion/rgb/image_rect_color", Image, self.image_callback, queue_size=10)
-        rospy.Subscriber("/xtion/depth/image_rect", Image, self.depth_callback, queue_size=10)
-        self.marker_pub = rospy.Publisher('/visualization_marker', Marker, queue_size=10)
+        rospy.sleep(2)
+        
+        # Init all params
+        self.init_params()
 
         # TF Listener
         self.tf_listener = tf.TransformListener()
@@ -65,9 +52,28 @@ class TableDetector:
         self.scene.remove_world_object()
         rospy.sleep(2)
 
-        self.s = rospy.Service('table_detector', Empty, self.scan_head)
+        self.s = rospy.Service('table_detector', c_srv.TableDetector, self.scan_head)
 
         rospy.spin()
+
+    def init_params(self):
+        try:
+            self.ARUCO_TARGET_IDS = rospy.get_param('~aruco_target_id', default=[1, 4])  # Target markers to detect
+            self.MARKER_LENGTH = rospy.get_param('~marker_length', default=0.04)  # Marker size in meters
+            self.scan_limit = rospy.get_param('~scan_limit', default=5) # Limit of scan to perform
+            
+            # Charger toute la structure
+            self.matrix_file = rospy.get_param('~matrix_file')
+            self.coefficients_file = rospy.get_param('~coefficients_file')
+            self.K = np.loadtxt(self.matrix_file)
+            self.D = np.loadtxt(self.coefficients_file)
+            
+            print("Camera matrix:", self.K)
+            print("Distortion coefficients:", self.D)
+            
+        except KeyError as e:
+            rospy.logerr(f"Paramètre manquant : {e}")
+            raise
 
     def depth_callback(self, ros_image):
         try:
@@ -93,7 +99,7 @@ class TableDetector:
                 if marker_id in self.ARUCO_TARGET_IDS:
                     rospy.loginfo(f"Detected marker {marker_id}")
 
-                    rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corner, MARKER_LENGTH, K, D)
+                    rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corner, self.MARKER_LENGTH, self.K, self.D)
                     transformed_point = self.transform_to_frame(tvec, rvec)
 
                     if transformed_point:
@@ -103,15 +109,6 @@ class TableDetector:
                     if len(self.ARUCO_TARGET_IDS) == 0:
                         self.add_collision_box(self.detected_positions)
                         self.aruco_detected = True
-
-        # Draw markers and display images
-        if corners:
-            cv2.aruco.drawDetectedMarkers(self.cam_image, corners)
-
-        cv2.imshow('RGB Camera', self.cam_image)
-        if self.depth_image is not None:
-            cv2.imshow('Depth Camera', self.depth_image)
-        cv2.waitKey(1)
 
     def transform_to_frame(self, tvec, rvec, source_frame='xtion_rgb_optical_frame', target_frame='base_link'):
         try:
@@ -139,7 +136,7 @@ class TableDetector:
 
         size_x = abs(positions[0].pose.position.x - positions[1].pose.position.x) + 0.7
         size_y = abs(positions[0].pose.position.y - positions[1].pose.position.y) + 0.1
-        size_z = 0.75
+        size_z = 0.9
 
         box_pose = PoseStamped()
         box_pose.header.frame_id = "base_link"
@@ -155,6 +152,7 @@ class TableDetector:
         quat = (R.from_quat(quat) * R.from_quat(z_rotation)).as_quat()
         o.x, o.y, o.z, o.w = quat
         box_pose.pose.orientation = o
+        box_pose.pose.orientation.y = 0
 
 
         # Add marker at Aruco Positions
@@ -189,6 +187,13 @@ class TableDetector:
     def scan_head(self, _):
         rate = rospy.Rate(10)
         self.reset()
+        
+        # Publishers and subscribers
+        self.head_pub = rospy.Publisher('/head_controller/command', JointTrajectory, queue_size=10)
+        self.result_pub = rospy.Publisher('/table_detector/result', String, queue_size=10)
+        self.image_sub = rospy.Subscriber("/xtion/rgb/image_rect_color", Image, self.image_callback, queue_size=10)
+        self.depth_sub = rospy.Subscriber("/xtion/depth/image_rect", Image, self.depth_callback, queue_size=10)
+        self.marker_pub = rospy.Publisher('/visualization_marker', Marker, queue_size=10)
 
         while not rospy.is_shutdown() and not self.aruco_detected:
             self.current_position += 0.02 * self.direction_multiplier
@@ -199,6 +204,11 @@ class TableDetector:
             elif self.current_position < -1.24:
                 self.current_position = -1.24
                 self.direction_multiplier = 1
+                self.scan_count += 1
+                
+                
+            if self.scan_count == self.scan_limit:
+                return -1
 
             head_point = JointTrajectoryPoint()
             head_point.positions = [self.current_position, -0.6]
@@ -208,7 +218,13 @@ class TableDetector:
             self.head_pub.publish(self.head_trajectory)
             rate.sleep()
         
-        return EmptyResponse()
+        self.head_pub.unregister()
+        self.result_pub.unregister()
+        self.image_sub.unregister()
+        self.depth_sub.unregister()
+        self.marker_pub.unregister()
+        
+        return 1
 
 if __name__ == "__main__":
     try:

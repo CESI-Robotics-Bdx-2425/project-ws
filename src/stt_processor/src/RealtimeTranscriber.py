@@ -42,7 +42,6 @@ class RealtimeTranscriber(threading.Thread):
         rospy.loginfo("En attente des données audio sur le topic /sound...")
     
     def toggle_speaking(self, ros_msg):
-        print(ros_msg)
         self.is_speaking = ros_msg.data
     
     def audio_callback(self, data):

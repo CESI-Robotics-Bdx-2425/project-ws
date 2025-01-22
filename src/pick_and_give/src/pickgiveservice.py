@@ -164,42 +164,45 @@ class PickAndPlaceService:
 
     def pick_and_place_handler(self, req):
         # Perform pick and give task
-        coordinates = req.coordinates
-        if coordinates.pose.position.y > 0:
-            arm = "left"
-        else:
-            arm = "right"
-        self.monter_buste([0.20])
-        self.arm_move_to(1, arm)
-        self.go_to_height(req.flyerNb)
+        try:
+            coordinates = req.coordinates
+            if coordinates.pose.position.y > 0:
+                arm = "left"
+            else:
+                arm = "right"
+            self.monter_buste([0.20])
+            self.arm_move_to(1, arm)
+            self.go_to_height(req.flyerNb)
 
-        self.mouvementPince('open', arm)
+            self.mouvementPince('open', arm)
 
-        # bonnes coordonnées
-        # self.take(req.flyerNb, True, arm, 0.54453056471187056, 0.12492931499231739, 0.9489589262033916, 0.9927617100741939, -0.11512265866514476, 0.022540725197273525, 0.025746381881962536)
-        # self.mouvementPince('close')
-        # self.take(req.flyerNb, False, arm, 0.54453056471187056, 0.12492931499231739, 0.9489589262033916, 0.9927617100741939, -0.11512265866514476, 0.022540725197273525, 0.025746381881962536)
+            # bonnes coordonnées
+            # self.take(req.flyerNb, True, arm, 0.54453056471187056, 0.12492931499231739, 0.9489589262033916, 0.9927617100741939, -0.11512265866514476, 0.022540725197273525, 0.025746381881962536)
+            # self.mouvementPince('close')
+            # self.take(req.flyerNb, False, arm, 0.54453056471187056, 0.12492931499231739, 0.9489589262033916, 0.9927617100741939, -0.11512265866514476, 0.022540725197273525, 0.025746381881962536)
 
-        print("take")
-        self.take(req.flyerNb, True, arm, coordinates.pose.position.x, coordinates.pose.position.y, 0.95, coordinates.pose.orientation.x, coordinates.pose.orientation.y, coordinates.pose.orientation.z, coordinates.pose.orientation.w)
-        self.mouvementPince('close', arm)
-        print("take return")
-        self.take(req.flyerNb, False, arm, coordinates.pose.position.x, coordinates.pose.position.y, 0.95, coordinates.pose.orientation.x, coordinates.pose.orientation.y, coordinates.pose.orientation.z, coordinates.pose.orientation.w)
+            print("take")
+            self.take(req.flyerNb, True, arm, coordinates.pose.position.x, coordinates.pose.position.y, 0.95, coordinates.pose.orientation.x, coordinates.pose.orientation.y, coordinates.pose.orientation.z, coordinates.pose.orientation.w)
+            self.mouvementPince('close', arm)
+            print("take return")
+            self.take(req.flyerNb, False, arm, coordinates.pose.position.x, coordinates.pose.position.y, 0.95, coordinates.pose.orientation.x, coordinates.pose.orientation.y, coordinates.pose.orientation.z, coordinates.pose.orientation.w)
 
-        self.monter_buste([0.35])
-        print("give")
-        self.give(arm)
-        self.mouvementPince('open', arm)
+            self.monter_buste([0.35])
+            print("give")
+            self.give(arm)
+            self.mouvementPince('open', arm)
 
-        self.arm_move_to(1, arm)
+            self.arm_move_to(1, arm)
 
-        home = rospy.ServiceProxy('homing', Empty)
-        r = home()
-        rospy.sleep(3)
+            home = rospy.ServiceProxy('homing', Empty)
+            r = home()
+            rospy.sleep(3)
 
-        print("Pick and place completed.")
+            print("Pick and place completed.")
 
-        return EmptyResponse()
+            return 0
+        except Exception as e:
+            return -1
 
 if __name__ == "__main__":
     try:

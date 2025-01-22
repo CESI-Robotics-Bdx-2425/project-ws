@@ -1,0 +1,191 @@
+/* Général: Centrer horizontalement le contenu */
+html {
+    display: flex;
+    justify-content: center;
+}
+
+/* Corps principal: Styles de base */
+body {
+    margin: 0 20px;
+    font-family: 'Arial', sans-serif;
+    color: #333;
+    background: linear-gradient(135deg, #6a89cc, #a29bfe); /* Dégradé bleu-violet */
+    line-height: 1.6;
+    height: 100vh; /* Prend toute la hauteur */
+    overflow: hidden; /* Cache le contenu qui dépasse */
+    flex: auto;
+    max-width: 800px; /* Largeur maximale du contenu */
+}
+
+/* Titres principaux */
+h1 {
+    color: white;
+    text-align: center;
+}
+
+/* Navigation */
+nav {
+    margin: 20px 0;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin: 0 15px;
+}
+
+/* Texte retranscrit par Tiago */
+#retanscript {
+    font-family: sans-serif;
+    color: white;
+    font-size: 24px;
+    font-weight: bolder;
+}
+
+/* Bloc principal */
+#whiteCase {
+    margin-top: 30px;
+    border: 3px solid whitesmoke; /* Bordures blanches */
+    border-radius: 25px; /* Coins arrondis */
+    color: white;
+    font-size: 24px;
+    font-weight: bolder;
+    font-style: oblique; /* Italique incliné */
+    box-shadow: 5px 5px 5px whitesmoke; /* Effet d'ombre */
+}
+
+/* Zones d'écoute et de transcription */
+#listener,
+#transcription {
+    color: white;
+    padding: 10px;
+}
+
+#listener {
+    display: flex;
+    gap: 20px; /* Espacement entre les éléments */
+    align-items: center;
+    justify-content: center;
+    border-bottom: solid; /* Ligne de séparation */
+}
+
+#transcription {
+    font-size: 24px;
+    font-weight: bolder;
+    font-style: oblique;
+    min-height: 140px; /* Hauteur minimale */
+}
+
+/* Texte: Partial et Final */
+.partial {
+    color: chartreuse; /* Vert fluo */
+    font-style: italic;
+    padding-left: 7px;
+}
+
+.final {
+    margin-left: 7px;
+}
+
+.previous-final {
+    color: white;
+    font-style: italic;
+    padding-left: 7px;
+}
+
+/* Indicateur d'état */
+#circle {
+    display: none; /* Caché par défaut */
+    height: 45px;
+    width: 45px;
+    border-radius: 50px; /* Cercle parfait */
+    background-color: lime; /* Vert pour l'état "connecté" */
+}
+
+/* Loader */
+.loader,
+.listen {
+    width: 40px;
+    aspect-ratio: 1;
+    display: grid;
+}
+
+/* Animation des loaders */
+.loader::before,
+.loader::after,
+.listen::before,
+.listen::after {
+    content: "";
+    grid-area: 1/1;
+    --c: no-repeat radial-gradient(farthest-side, red 92%, #0000);
+    background: var(--c) 50% 0, var(--c) 50% 100%, var(--c) 100% 50%, var(--c) 0 50%;
+    background-size: 12px 12px;
+    animation: l12 1s infinite;
+}
+
+/* Loader "écoute" */
+.listen::before {
+    margin: 4px;
+    filter: hue-rotate(45deg); /* Ajuste la couleur du cercle */
+    background-size: 8px 8px;
+    animation-timing-function: linear;
+}
+
+@keyframes l12 {
+    100% {
+        transform: rotate(0.5turn); /* Rotation à 180 degrés */
+    }
+}
+
+/* Conteneurs divers */
+#status,
+#options,
+#container-questions-anwsers {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Conteneur des questions et réponses */
+#container-questions-anwsers {
+    text-align: left;
+    color: white;
+    font-size: 24px;
+    font-weight: 501;
+    margin-top: 20px;
+    flex-direction: column;
+    min-height: 50px;
+}
+
+/* Options masquées par défaut */
+#options {
+    display: none;
+    justify-content: center;
+    margin: 20px 0;
+    padding: 10px 0;
+}
+
+/* Boutons et crédits */
+#settings-btn,
+#toggle-mic,
+#reload-btn {
+    color: black;
+    padding: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    background-color: lime;
+    border: none;
+    border-radius: 10px;
+}
+
+#reload-btn {
+    background-color: red;
+    color: white;
+    font-size: 24px;
+}
+
+#credits {
+    margin-top: 25px;
+    font-style: italic;
+}

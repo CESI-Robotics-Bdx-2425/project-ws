@@ -33,6 +33,14 @@ class WebServer():
         except Exception as e:
             rospy.logerr(f"Erreur lors de l'accès au fichier : {e}")
             return web.Response(status=500, text="Erreur interne au serveur")
+
+    async def handle_styles(self, request):
+        try:
+            print("Acces au style.css")
+            return web.FileResponse(f"{self.path}/src/templates/style.css")
+        except Exception as e:
+            rospy.logerr(f"Erreur lors de l'accès au fichier : {e}")
+            return web.Response(status=500, text="Erreur interne au serveur")
             
     async def run_server(self):
         """Démarre les serveurs HTTP et WebSocket"""
@@ -40,6 +48,7 @@ class WebServer():
         app = web.Application()
         app.router.add_get('/', self.handle_index)
         app.router.add_get('/roslib', self.handle_roslib)
+        app.router.add_get('/style', self.handle_styles)
         # Configurer le serveur HTTP
         runner = web.AppRunner(app)
         await runner.setup()

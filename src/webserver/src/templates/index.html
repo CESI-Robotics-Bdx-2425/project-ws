@@ -58,9 +58,17 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     let ros;
+
+    const hostname = window.location.hostname;
+
+
+    function startup() {
+        importRoslib()
+        connectToRos();
+    }
+
     function importRoslib() {
         // Récupérer le hostname de manière dynamique
-        const hostname = window.location.hostname;
         const scriptUrl = `http://${hostname}:8000/roslib`;
 
         // Créer une balise
@@ -71,13 +79,29 @@ document.addEventListener('DOMContentLoaded', () => {
         // Ajouter des gestionnaires pour le chargement et les erreurs
         script.onload = () => {
             console.log("Roslib chargé avec succès !");
-            // Vous pouvez initialiser du code ici si besoin
-            const ros = new ROSLIB.Ros({
-                url: `ws://${hostname}:9090`
-            });
-            console.log("Connexion ROS initialisée !");
-            // updateStatusDisplay('Connecté', true);
-            connectToRos();
+        };
+
+        script.onerror = () => {
+            console.error("Erreur lors du chargement de Roslib.");
+        };
+
+        // Ajouter le script dans la balise <head>
+        document.head.appendChild(script);
+        return importstyles();
+    }
+
+    function importstyles() {
+        // Récupérer le hostname de manière dynamique
+        const scriptUrl = `http://${hostname}:8000/styles`;
+
+        // Créer une balise
+        const script = document.createElement("style");
+        script.src = scriptUrl;
+        script.type = "text/css";
+
+        // Ajouter des gestionnaires pour le chargement et les erreurs
+        script.onload = () => {
+            console.log("Styles chargé avec succès !");
         };
 
         script.onerror = () => {
@@ -305,8 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.transcriptionDiv.appendChild(currentFinalSpan);
     };
 
-
-
     // Gestion des événements
     elements.reloadBtn.addEventListener('click', connectToRos);
 
@@ -332,371 +354,203 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initialisation
-    importRoslib();
+    startup();
     
 });
 </script>
 
 
 <style>
-    /* Styles de base */
+    /* Général: Centrer horizontalement le contenu */
     html {
         display: flex;
         justify-content: center;
     }
 
+    /* Corps principal: Styles de base */
     body {
-        margin: 0px 20px;
+        margin: 0 20px;
         font-family: 'Arial', sans-serif;
         color: #333;
-        background: linear-gradient(135deg, #6a89cc, #a29bfe);
+        background: linear-gradient(135deg, #6a89cc, #a29bfe); /* Dégradé bleu-violet */
         line-height: 1.6;
-        height: 100vh; /* Ajouté */
-        overflow: hidden; /* Ajouté */
+        height: 100vh; /* Prend toute la hauteur */
+        overflow: hidden; /* Cache le contenu qui dépasse */
         flex: auto;
-        max-width: 800px;
+        max-width: 800px; /* Largeur maximale du contenu */
     }
 
+    /* Titres principaux */
     h1 {
         color: white;
         text-align: center;
     }
 
+    /* Navigation */
     nav {
         margin: 20px 0;
     }
 
     nav a {
-        color: #fff;
+        color: white;
         text-decoration: none;
         margin: 0 15px;
     }
 
-    /*  */
-
-    #retanscript{
-        /* Text */
+    /* Texte retranscrit par Tiago */
+    #retanscript {
         font-family: sans-serif;
         color: white;
         font-size: 24px;
         font-weight: bolder;
     }
 
+    /* Bloc principal */
     #whiteCase {
-        /* container */
         margin-top: 30px;
-
-        /* Border */
-        border-style: solid;
-        border-width: 3px;
-        border-color: whitesmoke;
-        border-radius: 25px;
-
-        /* Texte */
+        border: 3px solid whitesmoke; /* Bordures blanches */
+        border-radius: 25px; /* Coins arrondis */
         color: white;
         font-size: 24px;
         font-weight: bolder;
-        font-style: oblique;
-
-        /* Background */
-        box-shadow: 5px 5px 5px whitesmoke;
+        font-style: oblique; /* Italique incliné */
+        box-shadow: 5px 5px 5px whitesmoke; /* Effet d'ombre */
     }
 
-    #listener, #transcription {
+    /* Zones d'écoute et de transcription */
+    #listener,
+    #transcription {
         color: white;
-        padding: 10px 10px;
+        padding: 10px;
     }
 
     #listener {
         display: flex;
-        gap: 20px;
+        gap: 20px; /* Espacement entre les éléments */
         align-items: center;
         justify-content: center;
-        border-bottom-style: solid;
+        border-bottom: solid; /* Ligne de séparation */
     }
 
     #transcription {
-        /* Texte */
         font-size: 24px;
         font-weight: bolder;
         font-style: oblique;
-
-        min-height: 140px;
+        min-height: 140px; /* Hauteur minimale */
     }
 
-    .previous-final{
+    /* Texte: Partial et Final */
+    .partial {
+        color: chartreuse; /* Vert fluo */
+        font-style: italic;
+        padding-left: 7px;
+    }
+
+    .final {
+        margin-left: 7px;
+    }
+
+    .previous-final {
         color: white;
         font-style: italic;
         padding-left: 7px;
     }
 
-    .partial {
-        color:chartreuse;
-        font-style: italic;
-        padding-left: 7px;
-    }
-
-    .final{
-        margin-left: 7px;
-    }
-
+    /* Indicateur d'état */
     #circle {
-        display: none;
+        display: none; /* Caché par défaut */
         height: 45px;
         width: 45px;
-        border-radius: 50px;
-        background-color: lime;
+        border-radius: 50px; /* Cercle parfait */
+        background-color: lime; /* Vert pour l'état "connecté" */
     }
 
-    #loader {
-        display: none;
-    }
-
-    /* Loader disconnect */
-
-    .loader {
-        width: 40px;
-        aspect-ratio: 1;
-        display: grid;
-    }
-    .loader::before,
-    .loader::after {    
-        content:"";
-        grid-area: 1/1;
-        --c:no-repeat radial-gradient(farthest-side, red 92%,#0000);
-        background: 
-            var(--c) 50%  0, 
-            var(--c) 50%  100%, 
-            var(--c) 100% 50%, 
-            var(--c) 0    50%;
-        background-size: 12px 12px;
-        animation: l12 1s infinite;
-    }
-    .loader::before {
-        margin: 4px;
-        filter: hue-rotate(45deg);
-        background-size: 8px 8px;
-        animation-timing-function: linear
-    }
-
-    @keyframes l12 { 
-        100%{transform: rotate(.5turn)}
-    }
-
-    /* Loader d'écoute */
-
+    /* Loader */
+    .loader,
     .listen {
         width: 40px;
         aspect-ratio: 1;
         display: grid;
     }
+
+    /* Animation des loaders */
+    .loader::before,
+    .loader::after,
     .listen::before,
-    .listen::after {    
-        content:"";
+    .listen::after {
+        content: "";
         grid-area: 1/1;
-        --c:no-repeat radial-gradient(farthest-side, lime 92%,#0000);
-        background: 
-            var(--c) 50%  0, 
-            var(--c) 50%  100%, 
-            var(--c) 100% 50%, 
-            var(--c) 0    50%;
+        --c: no-repeat radial-gradient(farthest-side, red 92%, #0000);
+        background: var(--c) 50% 0, var(--c) 50% 100%, var(--c) 100% 50%, var(--c) 0 50%;
         background-size: 12px 12px;
         animation: l12 1s infinite;
     }
+
+    /* Loader "écoute" */
     .listen::before {
         margin: 4px;
-        filter: hue-rotate(45deg);
+        filter: hue-rotate(45deg); /* Ajuste la couleur du cercle */
         background-size: 8px 8px;
-        animation-timing-function: linear
+        animation-timing-function: linear;
     }
 
-    #status, #options, #container-questions-anwsers {
+    @keyframes l12 {
+        100% {
+            transform: rotate(0.5turn); /* Rotation à 180 degrés */
+        }
+    }
+
+    /* Conteneurs divers */
+    #status,
+    #options,
+    #container-questions-anwsers {
         display: flex;
         justify-content: flex-start;
-        align-self: flex-start;
         align-items: center;
         gap: 10px;
     }
 
+    /* Conteneur des questions et réponses */
     #container-questions-anwsers {
-        /* Texte */
         text-align: left;
         color: white;
         font-size: 24px;
         font-weight: 501;
-        
-        /* Container */
         margin-top: 20px;
         flex-direction: column;
         min-height: 50px;
     }
 
+    /* Options masquées par défaut */
     #options {
         display: none;
         justify-content: center;
-        margin: 20px 0px 20px 0px;
-        padding: 10px 0px;
+        margin: 20px 0;
+        padding: 10px 0;
     }
 
-    #settings {
-        display: flex;
-        justify-content: flex-end;
-        flex: 1 1 auto;
-    }
-
-    #settings-btn{
+    /* Boutons et crédits */
+    #settings-btn,
+    #toggle-mic,
+    #reload-btn {
         color: black;
         padding: 10px;
         font-size: 18px;
-        background-color: lime;
         font-weight: bold;
-
-        border-style: none;
+        background-color: lime;
+        border: none;
         border-radius: 10px;
-    }
-
-    #status-text {
-        padding: 10px;
-        border-radius: 5px;
-        font-size: 24px;
-        color: white;
-        font-weight: 501;
     }
 
     #reload-btn {
-        padding: 10px;
-        font-size: 24px;
         background-color: red;
         color: white;
-
-        border-style: none;
-        border-radius: 10px;
-    }
-
-    #toggle-mic {
-        color: black;
-        padding: 10px;
-        font-size: 18px;
-        background-color: lime;
-        font-weight: bold;
-
-        border-style: none;
-        border-radius: 10px;
-    }
-
-    #toggle-mic[disabled]{
-        cursor: not-allowed;
-        color: whitesmoke;
-        opacity: 0.7;
+        font-size: 24px;
     }
 
     #credits {
         margin-top: 25px;
         font-style: italic;
-    }
-
-    .hero {
-        background: linear-gradient(180deg, rgba(38, 198, 218, 0.8), rgba(0, 0, 0, 0.7)), url('image.jpg') no-repeat center center/cover;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        color: #fff;
-    }
-
-    section {
-        padding: 20px;
-    }
-
-    .project-card {
-        background: linear-gradient(45deg, #ff6a00, #ee0979);
-        border-radius: 10px;
-        padding: 20px;
-        margin: 10px;
-        transition: transform 0.3s;
-    }
-
-    .project-card:hover {
-        transform: scale(1.05);
-    }
-
-    .testimonial {
-
-        background: linear-gradient(90deg, #00c6ff, #0072ff);
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px;
-    }
-
-    /* Media Queries pour différentes résolutions */
-
-    /* Smartphones */
-    @media (max-width: 640px) {
-        body {
-            font-size: 14px;
-        }
-
-        .hero {
-            height: 70vh;
-        }
-
-        nav {
-            display: flex;
-            flex-direction: column;
-        }
-
-        nav a {
-            margin: 5px 0;
-        }
-
-        .project-card, .testimonial {
-            padding: 15px;
-            margin: 5px;
-        }
-    }
-
-    /* Tablettes */
-    @media (min-width: 641px) and (max-width: 1024px) {
-        body {
-            font-size: 16px;
-        }
-
-        .hero {
-            height: 80vh;
-        }
-
-        nav {
-            display: flex;
-            justify-content: center;
-        }
-
-        .project-card, .testimonial {
-            padding: 20px;
-            margin: 10px;
-        }
-    }
-
-    /* Ordinateurs de bureau */
-    @media (min-width: 1025px) {
-        body {
-            font-size: 18px;
-        }
-
-        .hero {
-            height: 100vh;
-        }
-
-        nav {
-            display: flex;
-            justify-content: center;
-        }
-
-        .project-card, .testimonial {
-            padding: 25px;
-            margin: 15px;
-        }
     }
 </style>
 

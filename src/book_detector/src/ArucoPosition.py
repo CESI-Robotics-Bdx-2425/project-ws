@@ -42,8 +42,6 @@ class ArucoPoseCalculator:
         self.O_T_P = None
         
         # Initialisation du service
-        rospy.wait_for_service('pick_and_place')
-        self.pk = rospy.ServiceProxy('pick_and_place', PickAndGive)
         self.service = rospy.Service('book_detector', FindAruco, self.start_search)
         rospy.sleep(2)
         rospy.spin()
@@ -164,9 +162,6 @@ class ArucoPoseCalculator:
         
         self.image_sub.unregister()
         self.head_pub.unregister()
-        
-        c = self.pk(self.O_T_P, 0)
-        print(c)
         return self.O_T_P      
 
     def print_status(self, aruco_cible_pose, calculated_pose):

@@ -13,6 +13,7 @@
     <include file="$(find tiago_asker)/launch/tiago_asker.launch" /> 
     <include file="$(find stt_processor)/launch/stt_processor_with_gui.launch" /> 
     <include file="$(find pick_and_give)/launch/pick_and_give.launch" /> 
+    <include file="$(find go_home)/launch/homing.launch" /> 
     <node name="BookDetector" pkg="book_detector" type="ArucoPosition.py" output="screen">
         <param name="marker_length" value="$(arg marker_length)" />
         <param name="scan_limit" value="$(arg scan_limit)" />

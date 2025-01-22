@@ -13,6 +13,7 @@ class PickAndPlaceService:
         # Initialize the moveit_commander and rospy nodes
         moveit_commander.roscpp_initialize(sys.argv)
         rospy.init_node("pick_and_place_service", anonymous=True)
+        rospy.loginfo('Node pick_and_place_service started !')
 
         rospy.wait_for_service('/homing')
 
@@ -28,9 +29,9 @@ class PickAndPlaceService:
         self.gripper_group_right = moveit_commander.MoveGroupCommander("gripper_right")
 
         self.s = rospy.Service("pick_and_place", PickAndGive, self.pick_and_place_handler)
+        rospy.sleep(2) # Ensure that the robot is initialized properly
+        rospy.loginfo('Service pick_and_place started')
 
-        # Ensure that the robot is initialized properly
-        rospy.sleep(2)
 
     def monter_buste(self, hauteur):
         self.move_group_torso.set_joint_value_target(hauteur)

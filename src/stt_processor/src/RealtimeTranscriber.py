@@ -13,6 +13,7 @@ class RealtimeTranscriber(threading.Thread):
         
         # Initialisation du noeud ROS
         rospy.init_node('audio_transcriber', anonymous=True)
+        rospy.loginfo('Node audio_transcriber started !')
         rospy.sleep(1)
 
         # Init du paquet

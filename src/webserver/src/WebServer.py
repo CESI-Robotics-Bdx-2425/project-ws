@@ -7,6 +7,7 @@ class WebServer():
     def __init__(self):
         # Initialisation du noeud ROS
         rospy.init_node('webserver', anonymous=True)
+        rospy.loginfo('Node webserver started !')
         rospy.sleep(2)
 
         # Init du paquet

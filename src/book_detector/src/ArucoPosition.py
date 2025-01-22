@@ -17,6 +17,8 @@ class ArucoPoseCalculator:
         
         # Init du noeud ROS
         rospy.init_node('aruco_pose_calculator')
+        rospy.loginfo('Node aruco_pose_calculator started !')
+
         
         # Create listener for transformations
         self.tf_listener = tf.TransformListener()

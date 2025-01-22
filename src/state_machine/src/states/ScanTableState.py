@@ -17,6 +17,8 @@ class ScanTableState(smach.State):
         # Attendre que le service soit disponible
         rospy.wait_for_service(self.service_name)
         
+        self.TTS.say('Je démarre la calibration. Merci de ne plus modifier mon environnement')
+        
         try:
             # Créer un client de service et appeler le service
             scan_table = rospy.ServiceProxy(self.service_name, TableDetector)

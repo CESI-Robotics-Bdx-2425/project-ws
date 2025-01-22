@@ -9,7 +9,8 @@ class TiagoInteract:
     def __init__(self):
         # Initialisation du noeud ROS
         rospy.init_node('tiago_interact', anonymous=True)
-        
+        rospy.loginfo('Node tiago_interact started !')
+
         # Initialisation des variables
         self.is_using_stt = True
         self.is_speaking = False

@@ -9,7 +9,6 @@ class TextToSpeech():
     def __init__(self, language="fr_FR"):
         self.tts_service = rospy.ServiceProxy('/tiago_interact/tts', TiagoInteractTTS)
 
-
         rospy.loginfo("Initialisation synthèse vocale...")
 
         # Publishers

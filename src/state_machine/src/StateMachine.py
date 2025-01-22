@@ -15,7 +15,9 @@ from states.TalkState import TalkState
 from states.TakeState import TakeState
 
 def main():
-    rospy.init_node("state_machine_example")
+    rospy.init_node("state_machine")
+    rospy.loginfo('Node state_machine started !')
+
     rospy.sleep(1)
 
     # Créer la machine d'état

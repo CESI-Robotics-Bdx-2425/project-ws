@@ -10,7 +10,9 @@ class Homing:
         # Initialize the moveit_commander and rospy nodes
 
         moveit_commander.roscpp_initialize(sys.argv)
-        rospy.init_node("simple_moveit", anonymous=True)
+        rospy.init_node("homing", anonymous=True)
+        rospy.loginfo('Node homing started !')
+
 
         robot = moveit_commander.RobotCommander()
         scene = moveit_commander.PlanningSceneInterface()

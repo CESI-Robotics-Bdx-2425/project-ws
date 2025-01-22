@@ -15,13 +15,15 @@ class TakeState(smach.State):
         rospy.loginfo("Etat Scan : Appel au service 'pick_and_place'.")
         userdata.sm_previous_state = 'pick_and_place'
 
+        rospy.loginfo(f"Waiting service: {self.service_name}...")
         rospy.wait_for_service(self.service_name)
-
+        rospy.loginfo(f"Service {self.service_name} ready")
 
         try:
             pick = rospy.ServiceProxy(self.service_name, PickAndGive)
             # Créer un client de service et appeler le service
             r = pick(userdata.flyer_pos, 0)
+            rospy.loginfo(f"Pick : {r}")
             rospy.sleep(3)
             self.tts.say("Bonne journée")
             return "idle"

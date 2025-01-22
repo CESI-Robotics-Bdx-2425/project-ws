@@ -2,7 +2,7 @@ import rospy
 import smach
 from std_msgs.msg import String
 from utils.TTS import TextToSpeech
-from tiago_asker.srv import TiagoAskerAnswer, TiagoAskerService
+from tiago_asker.srv import TiagoAskerService
 
 class TalkState(smach.State):
     def __init__(self):
@@ -13,12 +13,9 @@ class TalkState(smach.State):
 
     def execute(self, userdata):
         rospy.loginfo("Etat Talk : Appel au service 'talk_state'.")
-        self.tts.say("Etat Talk : Appel au service 'talk_state'.")
         userdata.sm_previous_state = 'Talk_State'
-        # Attendre que le service soit disp
-        self.tts.say("balise 0")
+        # Attendre que le service soit dispo
         rospy.wait_for_service(self.service_name)
-        self.tts.say("balise 1")
             
         try:
             # Créer un client pour le service
@@ -27,9 +24,9 @@ class TalkState(smach.State):
             r = talk_state()
             # Récupérer la réponse du service
             userdata.flyer_id = r.flyer_id
-            if r.flyer_id == 3: 
+            rospy.loginfo(f"Le flyer_id retourné est : {r.flyer_id}")
+            if r.flyer_id == -1: 
                 return "idle"
-            rospy.loginfo(f"Le flyer_id retourné est : {r}")
             return "scanBook2"
         except rospy.ServiceException as e:
             rospy.logerr(f"Erreur lors de l'appel au service '{self.service_name}' : {e}")

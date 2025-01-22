@@ -34,6 +34,8 @@ class ArucoPoseCalculator:
         self.measurements = []
         self.is_measuring = False
         self.aruco_found = False
+        self.last_detection_time = None
+        self.detection_timeout = rospy.Duration(1.0)  # 1 seconde de timeout
         
         self.init_params()
         
@@ -105,6 +107,7 @@ class ArucoPoseCalculator:
         self.measurements = []
         self.is_measuring = False
         self.aruco_found = False
+        self.last_detection_time = None
         
         self.image_sub = rospy.Subscriber("/xtion/rgb/image_rect_color", Image, 
                                         self.image_callback, queue_size=10)
@@ -112,35 +115,42 @@ class ArucoPoseCalculator:
                                       queue_size=10)
         rospy.sleep(2)
 
-        # Scan with head until Aruco is found or scan limit is reached
         while not rospy.is_shutdown():
+            current_time = rospy.Time.now()
+            
+            # Vérifier si l'ArUco est perdu pendant les mesures
+            if self.is_measuring and self.last_detection_time:
+                time_since_last_detection = current_time - self.last_detection_time
+                if time_since_last_detection > self.detection_timeout:
+                    rospy.logwarn("ArUco perdu pendant les mesures! Reprise du scan...")
+                    self.aruco_found = False
+                    self.is_measuring = False
+                    self.measurements = []  # Réinitialiser les mesures
+                    continue
+
             if self.aruco_found:
                 if not self.is_measuring:
-                    # Commencer les mesures
                     self.is_measuring = True
                     rospy.loginfo("ArUco trouvé, début des mesures")
                 
-                # Continuer à publier la dernière position de la tête pour la maintenir fixe
+                # Maintenir la position de la tête
                 head_point = JointTrajectoryPoint()
                 head_point.positions = [self.current_position, -0.25]
                 head_point.time_from_start = rospy.Duration(0.5)
                 self.head_trajectory.points = [head_point]
                 self.head_pub.publish(self.head_trajectory)
-                rospy.loginfo("test1")
                 
                 if len(self.measurements) >= 100:
-                    # Calculer la moyenne des mesures
                     self.O_T_P = self.calculate_average_pose()
                     rospy.loginfo(f"Moyenne calculée sur {len(self.measurements)} mesures")
                     break
                 
-                self.rate.sleep()  # Maintenir le taux de publication
+                self.rate.sleep()
                 continue
             
-            # Update head position for scanning
+            # Mode scan
             self.current_position += 0.02 * self.direction_multiplier
 
-            # Check boundaries and change direction if needed
             if self.current_position > 1.24:
                 self.current_position = 1.24
                 self.direction_multiplier = -1
@@ -152,7 +162,6 @@ class ArucoPoseCalculator:
             if self.scan_count == self.scan_limit:
                 return PoseStamped()
 
-            # Create and publish head movement
             head_point = JointTrajectoryPoint()
             head_point.positions = [self.current_position, -0.25]
             head_point.time_from_start = rospy.Duration(0.5)
@@ -163,7 +172,7 @@ class ArucoPoseCalculator:
         
         self.image_sub.unregister()
         self.head_pub.unregister()
-        return self.O_T_P      
+        return self.O_T_P
 
     def print_status(self, aruco_cible_pose, calculated_pose):
         # Nettoie l'écran
@@ -247,6 +256,8 @@ class ArucoPoseCalculator:
             if ids is not None:
                 for corner, id in zip(corners, ids):
                     if id[0] == self.ARUCO_CIBLE_ID:
+                        self.last_detection_time = rospy.Time.now()  # Mettre à jour le temps de dernière détection
+                        
                         rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(
                             corner, self.MARKER_LENGTH, 
                             cameraMatrix=self.K, distCoeffs=self.D)

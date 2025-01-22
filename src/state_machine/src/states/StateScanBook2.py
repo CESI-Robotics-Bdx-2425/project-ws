@@ -7,8 +7,7 @@ from utils.TTS import TextToSpeech
 class BookScanState2(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['take','error'],input_keys=['sm_previous_state','flyer_id','flyer_pos'],output_keys=['sm_previous_state','flyer_pos'])
-        self.service_name = 'book_detector2'
-        self.error_count = 0  # Initialiser le compteur d'erreurs
+        self.service_name = 'book_detector'
         self.tts = TextToSpeech()
 
     def execute(self, userdata):
@@ -23,8 +22,8 @@ class BookScanState2(smach.State):
             # Créer un client de service et appeler le service
             self.tts.say(f"Je lance la recherche du flyer {userdata.flyer_id}")
             r = scan_book(int(userdata.flyer_id))
-            if (r.coordinates.pose.position.x != 0 and r.coordinates.pose.position.y != 0 and r.coordinates.pose.position.z !=0):
-                return
+            if r.coordinates.pose.position.x == 0 and r.coordinates.pose.position.y == 0 and r.coordinates.pose.position.z ==0:
+                return 'error'
             userdata.flyer_pos = r
             self.tts.say("le flyer est trouvé")
             return "take"

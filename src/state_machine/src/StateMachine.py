@@ -16,6 +16,7 @@ from states.TakeState import TakeState
 
 def main():
     rospy.init_node("state_machine_example")
+    rospy.sleep(1)
 
     # Créer la machine d'état
     sm = smach.StateMachine(outcomes=['DONE','EXIT'])
@@ -24,7 +25,7 @@ def main():
     sm.userdata.flyer_pos = None
     
     with sm:
-        smach.StateMachine.add('START', StartState(), transitions={'scanTable': 'SCANTABLE'})
+        smach.StateMachine.add('START', StartState(), transitions={'scanTable': 'IDLE'})
         smach.StateMachine.add('SCANTABLE', ScanTableState(), transitions={'scanBook': 'SCANBOOK', 'error':'ERROR'})
         smach.StateMachine.add('SCANBOOK', BookScanState(), transitions={'idle': 'IDLE','error':'ERROR'})
         smach.StateMachine.add('TALK', TalkState(), transitions={'scanBook2': 'SCANBOOK2','idle':'IDLE','error':'ERROR'})

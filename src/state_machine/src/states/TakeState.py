@@ -2,7 +2,7 @@
 import rospy
 import smach
 from utils.TTS import TextToSpeech
-from pick_and_give.srv import PickAndGive, PickAndGiveRequest
+from pick_and_give.srv import PickAndGive
 
 class TakeState(smach.State):
     def __init__(self):
@@ -19,9 +19,9 @@ class TakeState(smach.State):
 
 
         try:
-
+            pick = rospy.ServiceProxy(self.service_name, PickAndGive)
             # Créer un client de service et appeler le service
-            r = Pick(userdata.flyer_pos,0)
+            r = pick(userdata.flyer_pos, 0)
             rospy.sleep(3)
             self.tts.say("Bonne journée")
             return "idle"

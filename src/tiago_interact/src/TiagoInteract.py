@@ -16,9 +16,9 @@ class TiagoInteract:
         
         # Initialisation des TOPICS
         self.tts_topic = rospy.Publisher('/tts/goal', TtsActionGoal, queue_size=10)
-        self.tts_result = rospy.Subscriber('/tts/result', TtsActionResult, self.tts_result)
-        self.stt_state_topic = rospy.Publisher('/tiago_interact/stt/status', msg.Bool, queue_size=10)
+        self.tts_result = rospy.Subscriber('/tts/result', TtsActionResult, self.tts_finish)
         self.tts_status_topic = rospy.Publisher('/tiago_interact/tts/status', msg.Bool, queue_size=10)
+        self.stt_state_topic = rospy.Publisher('/tiago_interact/stt/status', msg.Bool, queue_size=10)
         
         # Initialisation des services d'interaction
         self.tts_service = rospy.Service('/tiago_interact/tts', TiagoInteractTTS, self.speak)
@@ -28,7 +28,7 @@ class TiagoInteract:
         
         self.spin()
     
-    def tts_result(self, ros_msg):
+    def tts_finish(self, ros_msg):
         self.is_speaking = False
     
     def spin(self):
@@ -78,6 +78,7 @@ class TiagoInteract:
     def reset(self):
         self.q_answer = None
         self.stt_msg = None
+
     
     def ask(self, ros_req):
         self.reset()
@@ -90,6 +91,7 @@ class TiagoInteract:
             self.stt_topic = rospy.Subscriber('/stt/full', msg.String, callback=self.stt_process, queue_size=10)
             while self.q_answer is None:
                 rospy.sleep(1)
+            self.stt_topic.unregister()
             return self.q_answer
         else:
             pass

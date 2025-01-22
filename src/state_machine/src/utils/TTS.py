@@ -20,6 +20,5 @@ class TextToSpeech():
         """Arrête le thread de synthèse vocale"""
         self.pub_tts.unregister()
             
-    @staticmethod
     def say(self, text):
         self.tts_service(text)

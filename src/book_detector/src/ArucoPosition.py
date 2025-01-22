@@ -126,6 +126,7 @@ class ArucoPoseCalculator:
                 head_point.time_from_start = rospy.Duration(0.5)
                 self.head_trajectory.points = [head_point]
                 self.head_pub.publish(self.head_trajectory)
+                rospy.loginfo("test1")
                 
                 if len(self.measurements) >= 100:
                     # Calculer la moyenne des mesures

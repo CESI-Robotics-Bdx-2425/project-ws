@@ -1,24 +1,16 @@
 #!/usr/bin/env python
 import rospy
 import smach
-from book_detector.srv import FindAruco
 from utils.TTS import TextToSpeech
 
-class BookScanState(smach.State):
+class TakeState(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['talk','error'],input_keys=['sm_previous_state'],output_keys=['sm_previous_state'])
+        smach.State.__init__(self, outcomes=['idle','error'],input_keys=['sm_previous_state'],output_keys=['sm_previous_state'])
         self.service_name = 'book_detector'
-        self.error_count = 0  # Initialiser le compteur d'erreurs
         self.tts = TextToSpeech()
-        
-        self.flyers = {
-            0: "0",
-            1: "3",
-            2: "2"
-        }
+
 
     def execute(self, userdata):
-        return 'talk'
         rospy.loginfo("Etat Scan : Appel au service 'book_detector'.")
         userdata.sm_previous_state = 'Scan Book'
         # Attendre que le service soit disponible
@@ -36,7 +28,7 @@ class BookScanState(smach.State):
                 rospy.sleep(3)
                 rospy.loginfo("Etat Scan : Réponse du service reçue, passage à l'état Listen.")
             self.tts.say("Les 3 flyers sont bien présents dans mon environnement")
-            return "talk"
+            return "idle"
 
         except rospy.ServiceException as e:
             rospy.logerr(f"Erreur lors de l'appel au service 'table_detector' : {e}")

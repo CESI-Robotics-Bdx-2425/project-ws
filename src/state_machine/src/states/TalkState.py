@@ -16,21 +16,24 @@ class TalkState(smach.State):
         self.tts.say("Etat Talk : Appel au service 'talk_state'.")
         userdata.sm_previous_state = 'Talk_State'
         # Attendre que le service soit disp
-        
+        self.tts.say("balise 0")
         rospy.wait_for_service(self.service_name)
         self.tts.say("balise 1")
-
+            
         try:
+            # Créer un client pour le service
             talk_state = rospy.ServiceProxy(self.service_name, TiagoAskerService)
-            # Créer un client de service et appeler le service
+            # Appeler le service (ici sans paramètres si la requête est vide)
             r = talk_state()
-            self.tts.say("balise 2")
+            # Récupérer la réponse du service
+            flyer_id = r.flyer_id
+        
+            rospy.loginfo(f"Le flyer_id retourné est : {flyer_id}")
+            self.tts.say(f"Le flyer ID est {flyer_id}")
             rospy.sleep(5)
             return "idle"
-
         except rospy.ServiceException as e:
-            rospy.logerr(f"Erreur lors de l'appel au service 'table_detector' : {e}")
-            # Vérifier si le nombre maximum d'erreurs a été atteint
+            rospy.logerr(f"Erreur lors de l'appel au service '{self.service_name}' : {e}")
             if self.error_count >= 3:
                 rospy.logerr("Nombre maximum d'erreurs atteint. Passage à l'état Error.")
                 return "error"

@@ -1,11 +1,23 @@
 <launch>
-    <arg name="marker_length" default="0.04" />
-    <arg name="scan_limit" default="1" />
+    <arg name="marker_length" default="0.038" />
+    <arg name="scan_limit" default="3" />
+    <arg name="matrix_file" default="$(find book_detector)/config/matrix.npy" />
+    <arg name="coefficients_file" default="$(find book_detector)/config/coefficients.npy" />
+    <arg name="aruco_matrix" default="$(find book_detector)/config/aruco.npy" />
+    <arg name="questions_file_path" default="$(find tiago_asker)/src/questions.json" />
+
+
 
     <include file="$(find table_detector)/launch/table_detector.launch" /> 
-    <node name="BookDetector" pkg="book_detector" type="ArucoDetector.py" output="screen">
+    <include file="$(find tiago_interact)/launch/tiago_interact.launch" />
+    <include file="$(find tiago_asker)/launch/tiago_asker.launch" /> 
+    <include file="$(find stt_processor)/launch/stt_processor_with_gui.launch" /> 
+    <node name="BookDetector" pkg="book_detector" type="ArucoPosition.py" output="screen">
         <param name="marker_length" value="$(arg marker_length)" />
-        <rosparam file="$(find book_detector)/config/master_calibration.yaml" />
+        <param name="scan_limit" value="$(arg scan_limit)" />
+        <param name="matrix_file" value="$(arg matrix_file)" />
+        <param name="coefficients_file" value="$(arg coefficients_file)" />
+        <param name="aruco_matrix" value="$(arg aruco_matrix)" />
     </node>
     <node name="StateMachine" pkg="state_machine" type="StateMachine.py" output="screen" />
 </launch>

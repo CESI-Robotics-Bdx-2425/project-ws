@@ -28,9 +28,9 @@ class PickAndGiveService:
         self.gripper_group_left = moveit_commander.MoveGroupCommander("gripper_left")
         self.gripper_group_right = moveit_commander.MoveGroupCommander("gripper_right")
 
-        self.s = rospy.Service("pick_and_place", PickAndGive, self.pick_and_place_handler)
+        self.s = rospy.Service("pick_and_give", PickAndGive, self.pick_and_give_handler)
         rospy.sleep(2) # Ensure that the robot is initialized properly
-        rospy.loginfo('Service pick_and_place started')
+        rospy.loginfo('Service pick_and_give started')
 
 
     def monter_buste(self, hauteur):
@@ -208,7 +208,7 @@ class PickAndGiveService:
             home = rospy.ServiceProxy('homing', Empty)
             r = home()
 
-            print("Pick and place completed.")
+            print("Pick and give completed.")
 
             return 0
         except Exception as e:

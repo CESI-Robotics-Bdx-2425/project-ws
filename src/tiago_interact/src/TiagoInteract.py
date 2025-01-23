@@ -100,6 +100,7 @@ class TiagoInteract:
     def toggle_stt(self, ros_req):
         self.is_using_stt = not self.is_using_stt
         rospy.loginfo(f'STT toggle to {self.is_using_stt}')
+        return srv.EmptyResponse()
     
     def error(self, e):
         rospy.logerr(f"[TIAGO_INTERACT]: {e}")

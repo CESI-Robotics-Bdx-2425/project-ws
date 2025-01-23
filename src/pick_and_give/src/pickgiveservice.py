@@ -8,12 +8,12 @@ import copy
 from pprint import pprint
 from scipy.spatial.transform import Rotation as R
 
-class PickAndPlaceService:
+class PickAndGiveService:
     def __init__(self):
         # Initialize the moveit_commander and rospy nodes
         moveit_commander.roscpp_initialize(sys.argv)
-        rospy.init_node("pick_and_place_service", anonymous=True)
-        rospy.loginfo('Node pick_and_place_service started !')
+        rospy.init_node("pick_and_give_service", anonymous=True)
+        rospy.loginfo('Node pick_and_give_service started !')
 
         rospy.wait_for_service('/homing')
 
@@ -171,7 +171,7 @@ class PickAndPlaceService:
         move_gripper.clear_pose_targets()
         move_gripper.stop()
 
-    def pick_and_place_handler(self, req):
+    def pick_and_give_handler(self, req):
         # Perform pick and give task
         try:
             coordinates = req.coordinates
@@ -216,7 +216,7 @@ class PickAndPlaceService:
 
 if __name__ == "__main__":
     try:
-        pick_and_place_service = PickAndPlaceService()
+        pick_and_give_service = PickAndGiveService()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass

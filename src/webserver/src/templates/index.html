@@ -1,67 +1,346 @@
 <!DOCTYPE html>
 <html lang="fr">
-    <head>
-        <meta charset="utf-8" />
-        <title>Transcription en temps réel</title>
-        <script>
-            const hostname=window.location.hostname;document.addEventListener("DOMContentLoaded",()=>{
-                const script=document.createElement("script");script.src=`http://${hostname}:8000/js`;
-                script.type="text/javascript";
-                //script.onload=()=>{console.log("J c'est le S de Tiago get !");resolve(true)};
-                //script.onerror=()=>{console.error("Erreur lors du chargement de J c'est le S de tiago ++.");reject(false)};
-                document.head.appendChild(script)});
-        </script>
-    </head>
-    <body>
+
+  <head>
+    <meta charset="utf-8" />
+    <title>Transcription en temps réel</title>
+    <script>
+      const hostname = window.location.hostname;
+      document.addEventListener("DOMContentLoaded", () => {
+        const script = document.createElement("script");
+        script.src = `http://${hostname}:8000/js`;
+        script.type = "text/javascript";
+        //script.onload=()=>{console.log("J c'est le S de Tiago get !");resolve(true)};
+        //script.onerror=()=>{console.error("Erreur lors du chargement de J c'est le S de tiago ++.");reject(false)};
+        document.head.appendChild(script);
+      });
+    </script>
+  </head>
+
+  <body>
+    <div>
+      <h1>Transcription en temps réel</h1>
+    </div>
+
+    <!-- Affichage des Status dans le front -->
+    <div id="status">
+      <div id="circle"></div>
+      <div class="loader" id="loading"></div>
+      <div id="status-text">Status: Déconnecté</div>
+      <div>
+        <button id="reload-btn">Reconnexion</button>
+      </div>
+      <div id="settings">
         <div>
-            <h1>Transcription en temps réel</h1>
+          <button id="settings-btn">Paramètres</button>
         </div>
+      </div>
+    </div>
 
+    <!-- Bouttons des options -->
+    <div id="options">
+      <button id="toggle-mic">Micro On/Off</button>
+    </div>
 
-        <!-- Affichage des Status dans le front -->
-        <div id="status">
-            <div id="circle"></div>
-            <div class="loader" id="loading"></div>
-            <div id="status-text">Status: Déconnecté</div>
-            <div>
-                <button id="reload-btn">Reconnexion</button>
-            </div>
-            <div id="settings">
-                <div>
-                    <button id="settings-btn">Paramètres</button>
-                </div>
-            </div>
-        </div>
+    <!-- Affichage des questions-->
+    <div id="container-questions-anwsers">
+      <div id="question-speek-tiago">
+        <div id="question-data"></div>
+      </div>
+      <div id="question-answers">
+        <div id="answers-data"></div>
+      </div>
+    </div>
 
-        <!-- Bouttons des options -->
-        <div id="options">
-            <button id="toggle-mic">Micro On/Off</button>
-        </div>
+    <!-- Retranscription du texte -->
+    <div id="whiteCase">
+      <div id="listener">
+        <div id="listener-msg">Transcription libre</div>
+        <div class="listen" id="listen-true"></div>
+        <div class="loader" id="listen-false" style="display: none"></div>
+      </div>
+      <div id="transcription"></div>
+    </div>
 
-        <!-- Affichage des questions-->
-        <div id="container-questions-anwsers">
-            <div id="question-speek-tiago">
-                <div id="question-data"></div>
-            </div>
-            <div id="question-answers">
-                <div id="answers-data"></div>
-            </div>
-        </div>
-        
-        <!-- Retranscription du texte -->
-        <div id="whiteCase">
-            <div id="listener">
-                <div id="listener-msg">Transcription libre</div>
-                <div class="listen" id="listen-true"></div>
-                <div class="loader" id="listen-false" style="display: none;" ></div>
-            </div>
-            <div id="transcription"></div>
-        </div>
+    <div id="anwsers"></div>
+    <div id="credits">© Made by A5 2024-2025</div>
+  </body>
 
-        <div id="anwsers"></div>
-        <div id="credits">© Made by A5 2024-2025</div>
-    </body>
 </html>
+
+<script>
+  function initializeApp() {
+    const hostname = window.location.hostname;
+    let ros;
+
+    // Variables Bool
+    let toggleMicValue = true;
+    let partialSpan = null;
+    let previousFinalSpan = null;
+    let currentFinalSpan = null;
+    let isSttEnabled = true;
+    let isInteractStatus = false;
+    let tiagoSay = null;
+
+    // Reconnection Variables
+    let reconnectionAttempts = 0;
+    const maxReconnectionAttempts = 200;
+    const reconnectionDelay = 20000;
+    let connectionCheckInterval = 5000;
+
+    const elements = {
+      transcriptionDiv: document.getElementById("transcription"),
+      answersDiv: document.getElementById("answers-data"),
+      statusDiv: document.getElementById("status-text"),
+      reloadBtn: document.getElementById("reload-btn"),
+      statusCircle: document.getElementById("circle"),
+      toggleMic: document.getElementById("toggle-mic"),
+      settingsBtn: document.getElementById("settings-btn"),
+      optionsDiv: document.getElementById("options"),
+      loadingAnimator: document.getElementById("loading"),
+      listenerMsg: document.getElementById("listener-msg"),
+      listenTrue: document.getElementById("listen-true"),
+      listenFalse: document.getElementById("listen-false"),
+      questionData: document.getElementById("question-data"),
+    };
+
+    function startup() {
+      updateStatusDisplay("Chargement des fichiers...", false);
+      Promise.all([importRoslib(), importstyles()])
+        .then(() => {
+          connectToRos();
+        })
+        .catch((error) => {
+          console.error("Erreur lors du chargement des fichiers :", error);
+          updateStatusDisplay("Erreur de chargement", false);
+        });
+    }
+
+    function importRoslib() {
+      return new Promise((resolve, reject) => {
+        const scriptUrl = `http://${hostname}:8000/roslib`;
+        const script = document.createElement("script");
+        script.src = scriptUrl;
+        script.type = "text/javascript";
+
+        script.onload = () => {
+          console.log("Roslib chargé avec succès !");
+          resolve(true);
+        };
+
+        script.onerror = () => {
+          console.error("Erreur lors du chargement de Roslib.");
+          reject(false);
+        };
+
+        document.head.appendChild(script);
+      });
+    }
+
+    function importstyles() {
+      return new Promise((resolve, reject) => {
+        const scriptUrl = `http://${hostname}:8000/styles`;
+        const link = document.createElement("link");
+        link.href = scriptUrl;
+        link.rel = "stylesheet";
+        link.type = "text/css";
+
+        link.onload = () => {
+          console.log("Styles chargés avec succès !");
+          resolve(true);
+        };
+
+        link.onerror = () => {
+          console.error("Erreur lors du chargement des styles.");
+          reject(false);
+        };
+
+        document.head.appendChild(link);
+      });
+    }
+
+    const connectToRos = () => {
+      ros = new ROSLIB.Ros({ url: `ws://${hostname}:9090` });
+      updateStatusDisplay("Connexion en cours...", false);
+
+      ros.on("connection", () => {
+        console.log("Connexion ROS réussie !");
+        updateReloadButtonVisibility(true);
+        updateStatusDisplay("Connecté", true);
+        reconnectionAttempts = 0;
+      });
+
+      ros.on("error", () => {
+        console.error("Erreur de connexion ROS.");
+        updateReloadButtonVisibility(false);
+        updateStatusDisplay("Erreur de connexion", false);
+        attemptReconnection();
+      });
+
+      ros.on("close", () => {
+        console.warn("Connexion ROS fermée.");
+        updateReloadButtonVisibility(false);
+        updateStatusDisplay("Déconnecté...", false);
+        attemptReconnection();
+      });
+
+      // Subscribe to topics
+      subscribeToTopics();
+    };
+
+    const subscribeToTopics = () => {
+      const topics = {
+        stt_partial: new ROSLIB.Topic({ ros, name: "/stt/partial", messageType: "std_msgs/String" }),
+        stt_full: new ROSLIB.Topic({ ros, name: "/stt/full", messageType: "std_msgs/String" }),
+        tiago_interact_stt_status: new ROSLIB.Topic({ ros, name: "/tiago_interact/stt/status", messageType: "std_msgs/Bool" }),
+        tiago_asker_question_possible_answers: new ROSLIB.Topic({ ros, name: "/tiago_asker/question/possible_answers", messageType: "std_msgs/String" }),
+        tts_goal: new ROSLIB.Topic({ ros, name: "/tts/goal", messageType: "pal_interaction_msgs/TtsActionGoal" }),
+        tts_result: new ROSLIB.Topic({ ros, name: "/tts/result", messageType: "pal_interaction_msgs/TtsActionResult" }),
+      };
+
+      topics.tiago_interact_stt_status.subscribe((message) => {
+        isSttEnabled = message.data;
+        elements.transcriptionDiv.style.display = isSttEnabled ? "block" : "none";
+        elements.answersDiv.style.display = isSttEnabled ? "none" : "block";
+        updateListenerDisplay(isSttEnabled);
+      });
+
+      topics.stt_partial.subscribe(handlePartialMessage);
+      topics.stt_full.subscribe(handleFullMessage);
+      topics.tiago_asker_question_possible_answers.subscribe(loadAnswersAndDisplay);
+      topics.tts_goal.subscribe(loadAskTiagoRealTime);
+      topics.tts_result.subscribe(onEndspeak);
+    };
+
+    const loadAskTiagoRealTime = (message) => {
+      updateListenerDisplay(false);
+      console.log(message.goal.rawtext.text);
+      tiagoSay = document.createElement("span");
+      tiagoSay.setAttribute("id", "retanscript");
+      elements.questionData.appendChild(tiagoSay);
+      tiagoSay.textContent = message.goal.rawtext.text;
+    };
+
+    const onEndspeak = () => {
+      console.log("Retrait du message");
+      const lastTiagoMessage = document.querySelector("#retanscript:last-child");
+      if (lastTiagoMessage) {
+        lastTiagoMessage.remove();
+        updateListenerDisplay(true);
+      }
+    };
+
+    const loadAnswersAndDisplay = (answers) => {
+      elements.answersDiv.innerHTML = "";
+      if (answers && answers.data) {
+        const answerList = answers.data.split(",");
+        answerList.forEach((answer) => {
+          const answerElement = document.createElement("div");
+          answerElement.className = "answer-element";
+          answerElement.textContent = answer.trim();
+          elements.answersDiv.appendChild(answerElement);
+        });
+      } else {
+        elements.answersDiv.textContent = "Aucune réponse disponible.";
+      }
+    };
+
+    const attemptReconnection = () => {
+      if (reconnectionAttempts >= maxReconnectionAttempts) {
+        updateStatusDisplay("Échec de reconnexion après plusieurs tentatives.", false);
+        stopConnectionCheck();
+        return;
+      }
+
+      reconnectionAttempts++;
+      console.log(`Tentative de reconnexion : ${reconnectionAttempts} / ${maxReconnectionAttempts}`);
+      setTimeout(connectToRos, reconnectionDelay);
+    };
+
+    const updateReloadButtonVisibility = (isConnected) => {
+      elements.reloadBtn.style.display = isConnected ? "none" : "block";
+    };
+
+    const updateStatusDisplay = (status, isConnected) => {
+      elements.statusDiv.textContent = `Status: ${status}`;
+      elements.statusCircle.style.display = isConnected ? "grid" : "none";
+      elements.loadingAnimator.style.display = isConnected ? "none" : "grid";
+      elements.reloadBtn.style.display = isConnected ? "none" : "block";
+    };
+
+    const updateListenerDisplay = (isListening) => {
+      console.log("isListening : " + isListening);
+      if (typeof isListening !== "boolean") {
+        console.error("Erreur : La donnée passée à 'updateListenerDisplay' n'est pas un booléen.");
+        elements.listenerMsg.textContent = "Erreur : État inconnu.";
+        elements.listenTrue.style.display = "none";
+        elements.listenFalse.style.display = "none";
+        return;
+      }
+      elements.listenerMsg.textContent = isListening ? "Je t'écoute :D" : "Je ne t'écoute pas ;)";
+      elements.listenTrue.style.display = isListening ? "grid" : "none";
+      elements.listenFalse.style.display = isListening ? "none" : "grid";
+    };
+
+    const handlePartialMessage = (message) => {
+      if (!isSttEnabled) return;
+      if (!partialSpan) {
+        partialSpan = document.createElement("span");
+        partialSpan.className = "partial";
+        elements.transcriptionDiv.appendChild(partialSpan);
+      }
+      partialSpan.textContent = message.data;
+    };
+
+    const handleFullMessage = (message) => {
+      if (!isSttEnabled) return;
+      if (partialSpan) {
+        partialSpan.remove();
+        partialSpan = null;
+      }
+      if (currentFinalSpan) {
+        if (previousFinalSpan) previousFinalSpan.remove();
+        previousFinalSpan = currentFinalSpan;
+        previousFinalSpan.className = "partial";
+      }
+
+      currentFinalSpan = document.createElement("span");
+      currentFinalSpan.className = "final";
+      currentFinalSpan.textContent = message.data;
+      elements.transcriptionDiv.appendChild(currentFinalSpan);
+    };
+
+    // Event Listeners
+    document.addEventListener("DOMContentLoaded", () => {
+      elements.reloadBtn.addEventListener("click", connectToRos);
+      elements.toggleMic.addEventListener("click", () => {
+        elements.toggleMic.disabled = true;
+        setTimeout(() => (elements.toggleMic.disabled = false), 3000);
+        toggleMicValue = !toggleMicValue;
+        elements.toggleMic.style.backgroundColor = toggleMicValue ? "lime" : "red";
+        elements.toggleMic.style.color = toggleMicValue ? "black" : "white";
+
+        const micService = new ROSLIB.Service({
+          ros: ros,
+          name: "/tiago_interact/stt/toggle",
+          serviceType: "std_srvs/Empty",
+        });
+
+        micService.callService(new ROSLIB.ServiceRequest(), () => console.log("Service appelé avec succès"));
+      });
+
+      elements.settingsBtn.addEventListener("click", () => {
+        elements.optionsDiv.style.display = elements.optionsDiv.style.display === "none" ? "block" : "none";
+      });
+    });
+
+    // Start the application
+    startup();
+  }
+
+  // When the file is loaded, launch the script
+  initializeApp();
+</script>
 
 <!--
 <style>

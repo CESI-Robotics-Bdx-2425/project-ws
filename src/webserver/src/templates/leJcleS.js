@@ -1,4 +1,4 @@
-function leJcleS() {
+/*function leJcleS() {
   let hostname = window.location.hostname;
 
   let ros;
@@ -377,3 +377,4 @@ function leJcleS() {
 }
 // quand le fichier est chargé, on lance le script
 leJcleS();
+*/

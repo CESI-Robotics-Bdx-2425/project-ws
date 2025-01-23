@@ -136,6 +136,10 @@ h1 {
     gap: 10px;
 }
 
+#status {
+    justify-content: space-evenly;
+}
+
 /* Conteneur des questions et réponses */
 #container-questions-anwsers {
     text-align: left;

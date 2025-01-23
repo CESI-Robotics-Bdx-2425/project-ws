@@ -73,22 +73,22 @@
         {
             "type": "result_ingenieur",
             "sentence": "Le programme Grande École en 5 ans correspond à vos attentes. Consultez cette brochure pour plus d'informations.",
-            "flyer_id": 0
+            "flyer_id": 3
         },
         {
             "type": "result_mastere_pro",
             "sentence": "Je vous conseil le programme de Mastère professionnel. Vous trouverez les détails dans cette brochure.",
-            "flyer_id": 1
+            "flyer_id": 2
         },
         {
             "type": "result_bachelor_spe",
             "sentence": "Nous vous recommandons le programme Bachelor en spécialité. Vous trouverez les détails dans cette brochure.",
-            "flyer_id": 2
+            "flyer_id": 0
         },
         {
             "type": "result_fail",
             "sentence": "Je ne peux malheureusement pas vous aider, veuillez demander des renseignements au personnel du CESI",
-            "flyer_id": 3
+            "flyer_id": -1
         }
     ]
 }

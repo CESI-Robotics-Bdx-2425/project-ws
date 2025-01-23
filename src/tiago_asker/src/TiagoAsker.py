@@ -12,7 +12,8 @@ class TiagoAsker():
     def __init__(self):
         # Initialisation du noeud ROS
         rospy.init_node('tiago_asker', anonymous=True)
-        
+        rospy.loginfo('Node tiago_asker started !')
+
         # Load params
         self.questions_file_path = rospy.get_param('~questions_file_path', default='questions.json') 
         self.finish = False

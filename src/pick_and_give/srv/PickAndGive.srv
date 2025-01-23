@@ -1,5 +1,4 @@
 geometry_msgs/PoseStamped coordinates
 int32 flyerNb
-
 ---
-# Empty Response
+int8 result

@@ -35,7 +35,7 @@ class TableDetector:
 
         # Initialize ROS node
         rospy.init_node('table_detector')
-        rospy.loginfo('TableDetector node initialized')
+        rospy.loginfo('Node table_detector started !')
         rospy.sleep(2)
         
         # Init all params

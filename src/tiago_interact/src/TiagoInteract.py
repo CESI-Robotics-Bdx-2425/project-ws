@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import rospy
-from tiago_interact.srv import TiagoInteractTTS, TiagoInteractSTT, TiagoInteractTTSResponse
+from tiago_interact.srv import TiagoInteractTTS, TiagoInteractSTT, TiagoInteractGUI
 from pal_interaction_msgs.msg import TtsActionGoal, TtsActionResult
 import std_msgs.msg as msg
 import std_srvs.srv as srv
@@ -24,7 +24,7 @@ class TiagoInteract:
         # Initialisation des services d'interaction
         self.tts_service = rospy.Service('/tiago_interact/tts', TiagoInteractTTS, self.speak)
         self.ask_service = rospy.Service('/tiago_interact/ask', TiagoInteractSTT, self.ask)
-        self.gui_service = rospy.Service('/tiago_interact/gui/answer', srv.Empty, self.process_gui_answer)
+        self.gui_service = rospy.Service('/tiago_interact/gui/answer', TiagoInteractGUI, self.process_gui_answer)
         self.trigger_stt_service = rospy.Service('/tiago_interact/stt/toggle', srv.Empty, self.toggle_stt)
         
         self.spin()
@@ -47,7 +47,7 @@ class TiagoInteract:
         return 0
 
     def process_gui_answer(self, ros_req):
-        print(ros_req)
+        self.q_answer = ros_req.answer
     
     def say(self, msg):
         # Prepare message to say
@@ -67,6 +67,8 @@ class TiagoInteract:
         self.tts_status_topic.publish(False)
     
     def stt_process(self, ros_msg):
+        if not self.is_using_stt:
+            return
         try:
             self.stt_msg = ros_msg.data
             if self.stt_msg in self.q_answers:
@@ -88,14 +90,10 @@ class TiagoInteract:
         self.q_answers = ros_req.answers
         print(self.q_answers)
         
-        if self.is_using_stt:
-            self.stt_topic = rospy.Subscriber('/stt/full', msg.String, callback=self.stt_process, queue_size=10)
-            while self.q_answer is None:
-                rospy.sleep(1)
-            self.stt_topic.unregister()
-            return self.q_answer
-        else:
-            pass
+        self.stt_topic = rospy.Subscriber('/stt/full', msg.String, callback=self.stt_process, queue_size=10)
+        while self.q_answer is None:        
+            rospy.sleep(1)
+        self.stt_topic.unregister()
     
     def toggle_stt(self, ros_req):
         self.is_using_stt = not self.is_using_stt

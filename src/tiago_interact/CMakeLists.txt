@@ -52,6 +52,7 @@ add_service_files(
     FILES
     TiagoInteractTTS.srv
     TiagoInteractSTT.srv
+    TiagoInteractGUI.srv
 #   Service2.srv
 )
 

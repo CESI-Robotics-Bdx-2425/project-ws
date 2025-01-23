@@ -252,11 +252,13 @@
     const callAnswerService = (answer) => {
         const answerService = new ROSLIB.Service({
             ros: ros,
-            name: `/your_service_name/${answer}`, // Remplacez par le nom de votre service
-            serviceType: "std_srvs/Empty", // Remplacez par le type de votre service
+            name: `/tiago_interact/gui/answer`, // Remplacez par le nom de votre service
+            serviceType: "tiago_interact/TiagoInteractGUI", // Remplacez par le type de votre service
         });
 
-        answerService.callService(new ROSLIB.ServiceRequest(), (result) => {
+        answerService.callService(new ROSLIB.ServiceRequest({
+          answer: answer
+        }), (result) => {
             console.log(`Service '${answer}' appelé avec succès`, result);
         }, (error) => {
             console.error(`Erreur lors de l'appel du service '${answer}'`, error);

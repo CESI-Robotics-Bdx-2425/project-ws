@@ -98,6 +98,7 @@ class PickAndPlaceService:
             wpose.orientation.x = oy
             wpose.orientation.z = oz
             wpose.orientation.w = ow
+            wpose.position.z += 0.02
         if arm == "left":
             wpose.orientation.x = ox
             wpose.orientation.y = oy
@@ -113,7 +114,7 @@ class PickAndPlaceService:
         move_group.clear_pose_targets()
         move_group.stop()
     
-    def give(self, arm):
+    def give(self, arm, give):
         if arm == "left":
             move_group = self.move_group_arm_left
         elif arm == "right":
@@ -126,12 +127,20 @@ class PickAndPlaceService:
 
         wpose = move_group.get_current_pose().pose
 
-        wpose.position.x = 0.66375268727851
-        if arm == "left":
-            wpose.position.y = 0.20147028471550366
-        elif arm == "right":
-            wpose.position.y = - 0.20147028471550366
-        wpose.position.z = 1.2491498772354426
+        if give == True:
+            wpose.position.x = 0.66375268727851
+            if arm == "left":
+                wpose.position.y = 0.20147028471550366
+            elif arm == "right":
+                wpose.position.y = - 0.20147028471550366
+            wpose.position.z = 1.2491498772354426
+        if give == False:
+            wpose.position.x = 0.36375268727851
+            if arm == "left":
+                wpose.position.y = 0.40147028471550366
+            elif arm == "right":
+                wpose.position.y = - 0.40147028471550366
+            wpose.position.z = 1.2491498772354426
 
         waypoints.append(copy.deepcopy(wpose))
 
@@ -189,14 +198,15 @@ class PickAndPlaceService:
 
             self.monter_buste([0.35])
             print("give")
-            self.give(arm)
+            self.give(arm, True)
+            rospy.sleep(2)
             self.mouvementPince('open', arm)
+            self.give(arm, False)
 
             self.arm_move_to(1, arm)
 
             home = rospy.ServiceProxy('homing', Empty)
             r = home()
-            rospy.sleep(3)
 
             print("Pick and place completed.")
 

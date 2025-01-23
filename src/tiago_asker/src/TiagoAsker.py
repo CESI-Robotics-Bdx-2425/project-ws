@@ -29,6 +29,8 @@ class TiagoAsker():
         self.tts_service = rospy.ServiceProxy('/tiago_interact/tts', TiagoInteractTTS)
         self.ask_service = rospy.ServiceProxy('/tiago_interact/ask', TiagoInteractSTT)
         
+        self.a_topic = rospy.Publisher('/tiago_asker/question/possible_answers', String, queue_size=10)
+        
         # Publish the service to ask question
         self.question_service = rospy.Service('/tiago_asker', TiagoAskerService, self.start)
         rospy.spin()
@@ -57,6 +59,10 @@ class TiagoAsker():
                 
                 # Ask TiagoInteract for answer
                 self.possible_answers = self.selected_question['responses'].keys()
+                
+                # Publish possible answers
+                self.a_topic.publish(",".join(self.possible_answers))
+                
                 self.answer = self.ask_service(self.possible_answers).answer
                 print(self.answer)
                 

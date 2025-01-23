@@ -3,8 +3,10 @@
     <arg name="aruco_target_id" default="[1, 4]" />
     <arg name="scan_limit" default="1" />
 
-    <arg name="matrix_file" default="$(find book_detector)/config/matrix.npy" />
-    <arg name="coefficients_file" default="$(find book_detector)/config/coefficients.npy" />
+    <!-- Camera Parameters -->
+    <arg name="matrix_file" default="$(find camera_arm_calibration)/config/cam_matrix.npy" />
+    <arg name="coefficients_file" default="$(find camera_arm_calibration)/config/cam_coefficients.npy" />
+    <arg name="aruco_matrix" default="$(find camera_arm_calibration)/config/aruco.npy" />
 
     <node name="TableDetector" pkg="table_detector" type="TableDetector.py" output="screen">
         <param name="marker_length" value="$(arg marker_length)" />

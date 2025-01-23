@@ -25,6 +25,7 @@ def main():
     sm.userdata.sm_previous_state = 'Start'
     sm.userdata.flyer_id = 0
     sm.userdata.flyer_pos = None
+    sm.userdata.error = None
     
     with sm:
         smach.StateMachine.add('START', StartState(), transitions={'scanTable': 'IDLE'})

@@ -6,7 +6,7 @@ from pick_and_give.srv import PickAndGive
 
 class TakeState(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['idle','error'],input_keys=['sm_previous_state','flyer_id','flyer_pos'],output_keys=['sm_previous_state'])
+        smach.State.__init__(self, outcomes=['idle','error'],input_keys=['sm_previous_state','flyer_id','flyer_pos'],output_keys=['sm_previous_state', 'error'])
         self.service_name = 'pick_and_place'
         self.tts = TextToSpeech()
 
@@ -23,6 +23,12 @@ class TakeState(smach.State):
             pick = rospy.ServiceProxy(self.service_name, PickAndGive)
             # Créer un client de service et appeler le service
             r = pick(userdata.flyer_pos, 0)
+            if r.result != 0:
+                userdata.error = {
+                    "error": "Erreur: mouvement non atteignable",
+                    "need_shut": False
+                }
+                return "error"
             rospy.loginfo(f"Pick : {r}")
             rospy.sleep(3)
             self.tts.say("Bonne journée")

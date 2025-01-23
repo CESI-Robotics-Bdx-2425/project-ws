@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import cv2
 import numpy as np
-import rospy
+import rospy, rospkg
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import PoseStamped
@@ -19,6 +19,7 @@ class ArucoPoseCalculator:
         rospy.init_node('aruco_pose_calculator')
         rospy.loginfo('Node aruco_pose_calculator started !')
 
+        self.rospack = rospkg.RosPack()
         
         # Create listener for transformations
         self.tf_listener = tf.TransformListener()
@@ -55,11 +56,11 @@ class ArucoPoseCalculator:
             self.MARKER_LENGTH = rospy.get_param('~marker_length', default=0.038)
             self.scan_limit = rospy.get_param('~scan_limit', default=1)
             
-            f = rospy.get_param('~aruco_matrix', default='aruco.npy')
+            f = rospy.get_param('~aruco_matrix', default=f"{self.rospack.get_path('camera_arm_calibration')}/config/aruco.npy")
             self.A_T_P = np.loadtxt(f)
             
-            self.matrix_file = rospy.get_param('~matrix_file')
-            self.coefficients_file = rospy.get_param('~coefficients_file')
+            self.matrix_file = rospy.get_param('~matrix_file', default=f"{self.rospack.get_path('camera_arm_calibration')}/config/matrix.npy")
+            self.coefficients_file = rospy.get_param('~coefficients_file', default=f"{self.rospack.get_path('camera_arm_calibration')}/config/coefficients_file.npy")
             self.K = np.loadtxt(self.matrix_file)
             self.D = np.loadtxt(self.coefficients_file)
         except KeyError as e:

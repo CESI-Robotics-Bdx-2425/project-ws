@@ -1,9 +1,9 @@
 <launch>
     <arg name="marker_length" default="0.038" />
     <arg name="scan_limit" default="3" />
-    <arg name="matrix_file" default="$(find book_detector)/config/matrix.npy" />
-    <arg name="coefficients_file" default="$(find book_detector)/config/coefficients.npy" />
-    <arg name="aruco_matrix" default="$(find book_detector)/config/aruco.npy" />
+    <arg name="matrix_file" default="$(find camera_arm_calibration)/config/cam_matrix.npy" />
+    <arg name="coefficients_file" default="$(find camera_arm_calibration)/config/cam_coefficients.npy" />
+    <arg name="aruco_matrix" default="$(find camera_arm_calibration)/config/aruco.npy" />
 
     <node name="BookDetector" pkg="book_detector" type="ArucoPosition.py" output="screen">
         <param name="marker_length" value="$(arg marker_length)" />

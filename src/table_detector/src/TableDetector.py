@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import rospy
+import rospy, rospkg
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
@@ -36,6 +36,9 @@ class TableDetector:
         # Initialize ROS node
         rospy.init_node('table_detector')
         rospy.loginfo('Node table_detector started !')
+        
+        self.rospack = rospkg.RosPack()    
+    
         rospy.sleep(2)
         
         # Init all params
@@ -63,10 +66,10 @@ class TableDetector:
             self.scan_limit = rospy.get_param('~scan_limit', default=5) # Limit of scan to perform
             
             # Charger toute la structure
-            self.matrix_file = rospy.get_param('~matrix_file')
-            self.coefficients_file = rospy.get_param('~coefficients_file')
-            self.K = np.loadtxt(self.matrix_file)
-            self.D = np.loadtxt(self.coefficients_file)
+            m_file = rospy.get_param('~matrix_file', default=f"{self.rospack.get_path('camera_arm_calibration')}/config/matrix.npy")
+            c_file = rospy.get_param('~coefficients_file', default=f"{self.rospack.get_path('camera_arm_calibration')}/config/coefficients_file.npy")
+            self.K = np.loadtxt(m_file)
+            self.D = np.loadtxt(c_file)
             
             print("Camera matrix:", self.K)
             print("Distortion coefficients:", self.D)

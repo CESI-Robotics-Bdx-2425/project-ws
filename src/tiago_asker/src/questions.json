@@ -49,7 +49,7 @@
             "question": "Avez-vous une appétence pour les matières scientifiques ?",
             "responses": {
                 "oui": "question_ingenieur_2",
-                "non": "question_bac_plus_3"
+                "non": "question_bachelor_spe"
             }
         },
         {

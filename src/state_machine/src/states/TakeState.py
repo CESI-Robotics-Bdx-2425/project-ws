@@ -7,13 +7,13 @@ from pick_and_give.srv import PickAndGive
 class TakeState(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['idle','error'],input_keys=['sm_previous_state','flyer_id','flyer_pos'],output_keys=['sm_previous_state', 'error'])
-        self.service_name = 'pick_and_place'
+        self.service_name = 'pick_and_give'
         self.tts = TextToSpeech()
 
 
     def execute(self, userdata):
-        rospy.loginfo("Etat Scan : Appel au service 'pick_and_place'.")
-        userdata.sm_previous_state = 'pick_and_place'
+        rospy.loginfo("Etat Scan : Appel au service 'pick_and_give'.")
+        userdata.sm_previous_state = 'pick_and_give'
 
         rospy.loginfo(f"Waiting service: {self.service_name}...")
         rospy.wait_for_service(self.service_name)

@@ -14,8 +14,8 @@ class ErrorState(smach.State):
 
     def execute(self, userdata):
         rospy.logerr(f"Etat Error : Une erreur est survenue dans l'état {userdata.sm_previous_state}.")
-        self.TTS.say(f"ERROR: {userdata.sm_previous_state}. {userdata.error.error}")
-        if self.error.need_shut == True:
-            rospy.signal_shutdown('ERROR')
+        #self.TTS.say(f"ERROR: {userdata.sm_previous_state}. {userdata.error.error}")
+        #if self.error.need_shut == True:
+        #    rospy.signal_shutdown('ERROR')
         rospy.loginfo("Etat Error : Terminaison de la machine d'états.")
         return 'idle'

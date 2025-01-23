@@ -20,12 +20,12 @@ class BookScanState2(smach.State):
         try:
             scan_book = rospy.ServiceProxy(self.service_name, FindAruco)
             # Créer un client de service et appeler le service
-            self.tts.say(f"Je lance la recherche du flyer {userdata.flyer_id}")
+            self.tts.say(f"Laissez moi rechercher la brochure")
             r = scan_book(int(userdata.flyer_id))
             if r.coordinates.pose.position.x == 0 and r.coordinates.pose.position.y == 0 and r.coordinates.pose.position.z ==0:
                 return 'error'
             userdata.flyer_pos = r.coordinates
-            self.tts.say("le flyer est trouvé")
+            self.tts.say("La brochure est trouvée")
             return "take"
 
         except rospy.ServiceException as e:

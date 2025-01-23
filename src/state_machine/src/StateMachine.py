@@ -13,6 +13,7 @@ from states.StateScanBook2 import BookScanState2
 from states.ErrorState import ErrorState
 from states.TalkState import TalkState
 from states.TakeState import TakeState
+from states.StateRefill import RefillState
 
 def main():
     rospy.init_node("state_machine")
@@ -26,14 +27,18 @@ def main():
     sm.userdata.flyer_id = 0
     sm.userdata.flyer_pos = None
     sm.userdata.error = None
+    sm.userdata.book_count = {0: 3, 3: 3, 2: 3}
     
     with sm:
         smach.StateMachine.add('START', StartState(), transitions={'scanTable': 'IDLE'})
         smach.StateMachine.add('SCANTABLE', ScanTableState(), transitions={'scanBook': 'SCANBOOK', 'error':'ERROR'})
         smach.StateMachine.add('SCANBOOK', BookScanState(), transitions={'idle': 'IDLE','error':'ERROR'})
+        
         smach.StateMachine.add('TALK', TalkState(), transitions={'scanBook2': 'SCANBOOK2','idle':'IDLE','error':'ERROR'})
         smach.StateMachine.add('SCANBOOK2', BookScanState2(), transitions={'take': 'TAKE','error':'ERROR'})
-        smach.StateMachine.add('TAKE', TakeState(), transitions={'idle': 'IDLE','error':'ERROR'})
+        
+        smach.StateMachine.add('TAKE', TakeState(), transitions={'idle': 'IDLE','error':'ERROR', 'refill': 'REFILL'})
+        smach.StateMachine.add('REFILL', RefillState(), transitions={'idle': 'IDLE','error':'ERROR'})
 
         smach.StateMachine.add('IDLE', IdleState(), transitions={'talk':'TALK','idle':'IDLE'})
         smach.StateMachine.add('ERROR', ErrorState(), transitions={'idle': 'IDLE'})

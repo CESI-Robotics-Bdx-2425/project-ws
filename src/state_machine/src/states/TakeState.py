@@ -6,7 +6,7 @@ from pick_and_give.srv import PickAndGive
 
 class TakeState(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['idle','error'],input_keys=['sm_previous_state','flyer_id','flyer_pos'],output_keys=['sm_previous_state', 'error'])
+        smach.State.__init__(self, outcomes=['idle','error','refill'],input_keys=['sm_previous_state','flyer_id','flyer_pos','book_count'],output_keys=['sm_previous_state', 'error', 'book_count'])
         self.service_name = 'pick_and_give'
         self.tts = TextToSpeech()
 
@@ -22,17 +22,21 @@ class TakeState(smach.State):
         try:
             pick = rospy.ServiceProxy(self.service_name, PickAndGive)
             # Créer un client de service et appeler le service
-            r = pick(userdata.flyer_pos, 0)
+            r = pick(userdata.flyer_pos, 3 - userdata.book_count[userdata.flyer_id])
             if r.result != 0:
                 userdata.error = {
                     "error": "Erreur: mouvement non atteignable",
                     "need_shut": False
                 }
                 return "error"
-            rospy.loginfo(f"Pick : {r}")
-            rospy.sleep(3)
-            self.tts.say("Bonne journée")
-            return "idle"
+            else:
+                userdata.book_count[userdata.flyer_id] -= 1             
+                rospy.loginfo(f"Pick : {r}")
+                rospy.sleep(1)
+                self.tts.say("Bonne journée")
+                if userdata.book_count[userdata.flyer_id] == 0:
+                    return 'refill'
+                return "idle"
 
         except rospy.ServiceException as e:
             rospy.logerr(f"Erreur lors de l'appel au service 'table_detector' : {e}")

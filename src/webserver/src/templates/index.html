@@ -53,7 +53,7 @@
     </div>
 
     <!-- Retranscription du texte -->
-    <div id="whiteCase">
+    <div id="retanscript-div">
       <div id="listener">
         <div id="listener-msg">Transcription libre</div>
         <div class="listen" id="listen-true"></div>
@@ -102,6 +102,7 @@
       listenTrue: document.getElementById("listen-true"),
       listenFalse: document.getElementById("listen-false"),
       questionData: document.getElementById("question-data"),
+      retranscriptionDiv: document.getElementById("retanscript-div"),
     };
 
     function startup() {
@@ -231,6 +232,38 @@
     };
 
     const loadAnswersAndDisplay = (answers) => {
+        elements.answersDiv.innerHTML = ""; // Vider le conteneur des réponses
+        if (answers && answers.data) {
+            const answerList = answers.data.split(",");
+            answerList.forEach((answer) => {
+                const answerElement = document.createElement("button");
+                answerElement.className = "answer-element";
+                answerElement.textContent = answer.trim();
+                answerElement.addEventListener("click", () => {
+                    callAnswerService(answer.trim()); // Appeler le service avec la réponse
+                });
+                elements.answersDiv.appendChild(answerElement);
+            });
+        } else {
+            elements.answersDiv.textContent = "Aucune réponse disponible.";
+        }
+    };
+
+    const callAnswerService = (answer) => {
+        const answerService = new ROSLIB.Service({
+            ros: ros,
+            name: `/your_service_name/${answer}`, // Remplacez par le nom de votre service
+            serviceType: "std_srvs/Empty", // Remplacez par le type de votre service
+        });
+
+        answerService.callService(new ROSLIB.ServiceRequest(), (result) => {
+            console.log(`Service '${answer}' appelé avec succès`, result);
+        }, (error) => {
+            console.error(`Erreur lors de l'appel du service '${answer}'`, error);
+        });
+    };
+    /*
+    const loadAnswersAndDisplay = (answers) => {
       elements.answersDiv.innerHTML = "";
       if (answers && answers.data) {
         const answerList = answers.data.split(",");
@@ -244,6 +277,7 @@
         elements.answersDiv.textContent = "Aucune réponse disponible.";
       }
     };
+    */
 
     const attemptReconnection = () => {
       if (reconnectionAttempts >= maxReconnectionAttempts) {
@@ -317,8 +351,11 @@
         elements.toggleMic.disabled = true;
         setTimeout(() => (elements.toggleMic.disabled = false), 3000);
         toggleMicValue = !toggleMicValue;
+        console.log("toggleMicValue : " + toggleMicValue);
         elements.toggleMic.style.backgroundColor = toggleMicValue ? "lime" : "red";
         elements.toggleMic.style.color = toggleMicValue ? "black" : "white";
+
+        elements.retranscriptionDiv.style.display = toggleMicValue ? "block" : "none";
 
         const micService = new ROSLIB.Service({
           ros: ros,
@@ -326,7 +363,9 @@
           serviceType: "std_srvs/Empty",
         });
 
-        micService.callService(new ROSLIB.ServiceRequest(), () => console.log("Service appelé avec succès"));
+        micService.callService(
+          new ROSLIB.ServiceRequest(), () => console.log("Service appelé avec succès")
+        );
       });
 
       elements.settingsBtn.addEventListener("click", () => {

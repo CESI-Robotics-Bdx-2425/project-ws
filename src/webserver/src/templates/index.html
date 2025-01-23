@@ -3,6 +3,14 @@
     <head>
         <meta charset="utf-8" />
         <title>Transcription en temps réel</title>
+        <script>
+            const hostname=window.location.hostname;document.addEventListener("DOMContentLoaded",()=>{
+                const script=document.createElement("script");script.src=`http://${hostname}:8000/js`;
+                script.type="text/javascript";
+                //script.onload=()=>{console.log("J c'est le S de Tiago get !");resolve(true)};
+                //script.onerror=()=>{console.error("Erreur lors du chargement de J c'est le S de tiago ++.");reject(false)};
+                document.head.appendChild(script)});
+        </script>
     </head>
     <body>
         <div>
@@ -29,6 +37,16 @@
         <div id="options">
             <button id="toggle-mic">Micro On/Off</button>
         </div>
+
+        <!-- Affichage des questions-->
+        <div id="container-questions-anwsers">
+            <div id="question-speek-tiago">
+                <div id="question-data"></div>
+            </div>
+            <div id="question-answers">
+                <div id="answers-data"></div>
+            </div>
+        </div>
         
         <!-- Retranscription du texte -->
         <div id="whiteCase">
@@ -45,595 +63,201 @@
     </body>
 </html>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    let ros;
-    function importRoslib() {
-        // Récupérer le hostname de manière dynamique
-        const hostname = window.location.hostname;
-        const scriptUrl = `http://${hostname}:8000/roslib`;
-
-        // Créer une balise <script>
-        const script = document.createElement("script");
-        script.src = scriptUrl;
-        script.type = "text/javascript";
-        //script.async = true;
-
-        // Ajouter des gestionnaires pour le chargement et les erreurs
-        script.onload = () => {
-            console.log("Roslib chargé avec succès !");
-            // Vous pouvez initialiser du code ici si besoin
-            const ros = new ROSLIB.Ros({
-                url: `ws://${hostname}:9090`
-            });
-            console.log("Connexion ROS initialisée !");
-            // updateStatusDisplay('Connecté', true);
-            connectToRos();
-        };
-
-        script.onerror = () => {
-            console.error("Erreur lors du chargement de Roslib.");
-        };
-
-        // Ajouter le script dans la balise <head>
-        document.head.appendChild(script);
-    }
-
-    // Variables globales
-    const elements = {
-        transcriptionDiv:   document.getElementById('transcription'),
-        answersDiv:         document.getElementById('anwsers'),
-        statusDiv:          document.getElementById('status-text'),
-        reloadBtn:          document.getElementById('reload-btn'),
-        statusCircle:       document.getElementById('circle'),
-        toggleMic:          document.getElementById('toggle-mic'),
-        settingsBtn:        document.getElementById('settings-btn'),
-        optionsDiv:         document.getElementById('options'),
-        loadingAnimator:    document.getElementById('loading'),
-        listenerMsg:        document.getElementById('listener-msg'),
-        listenTrue:         document.getElementById('listen-true'),
-        listenFalse:        document.getElementById('listen-false'),
-    };
-    
-    // Variables Bool
-    let toggleMicValue      = true;
-    let partialSpan         = null;
-    let previousFinalSpan   = null;
-    let currentFinalSpan    = null;
-    let isSttEnabled        = true;
-    let isInteractStatus    = false;
-
-    // Reconnexion Variables
-    let     reconnectionAttempts      = 5; // Nombre de tentatives de reconnexion
-    const   maxReconnectionAttempts   = 5; // Nombre maximal de tentatives
-    const   reconnectionDelay         = 2000; // Délai entre les tentatives (en millisecondes)
-    let     countdownInterval         = 20;          // Pour stocker l'intervalle de décompte
-    let     connectionCheckInterval   = 5000; // Intervalle de vérification de connexion
-
-    // Connexion ROS et abonnements
-    const connectToRos = () => {
-
-        ros = new ROSLIB.Ros({url: `ws://${window.location.hostname}:9090`});
-
-        updateStatusDisplay('Connexion en cours...', false);
-
-        ros.on('connection', () => {
-            console.log("Connexion ROS réussie !");
-            updateReloadButtonVisibility(true);
-            updateStatusDisplay('Connecté', true);
-            reconnectionAttempts = 0; // Réinitialiser les tentatives de reconnexion
-            startConnectionCheck();
-        });
-
-        ros.on('error', () => {
-            console.error("Erreur de connexion ROS.");
-            updateReloadButtonVisibility(false);
-            updateStatusDisplay('Erreur de connexion', false);
-            attemptReconnection(); // Lancer une tentative de reconnexion
-        });
-
-        ros.on('close', () => {
-            console.warn("Connexion ROS fermée.");
-            updateReloadButtonVisibility(false);
-            updateStatusDisplay('Déconnecté...', false);
-            attemptReconnection(); // Lancer une tentative de reconnexion
-        });
-
-        const topics = {
-            partial: new ROSLIB.Topic({ ros, name: '/stt/partial', messageType: 'std_msgs/String' }),
-            full: new ROSLIB.Topic({ ros, name: '/stt/full', messageType: 'std_msgs/String' }),
-            toggleStt: new ROSLIB.Topic({ ros, name: '/tiago_interact/stt/status', messageType: 'std_msgs/Bool' }),
-            interactStatus: new ROSLIB.Topic({ ros, name: '/tiago_interact/stt/status', messageType: 'std_msgs/Bool' }),
-            bookList: new ROSLIB.Topic({ros, name: '/name', messageType: 'std_msgs/String'}),
-        };
-
-        topics.interactStatus.subscribe((message) => updateListenerDisplay(message.data));
-        
-        topics.toggleStt.subscribe((message) => {
-            isSttEnabled = message.data;
-            elements.transcriptionDiv.style.display = isSttEnabled ? 'block' : 'none';
-            elements.answersDiv.style.display = isSttEnabled ? 'none' : 'block';
-        });
-        
-        topics.partial.subscribe(handlePartialMessage);
-
-        topics.full.subscribe(handleFullMessage);
-
-        topics.bookList.subscribe(uptadeBookList);
-    };
-
-    // Vérification périodique de la connexion
-    const startConnectionCheck = () => {
-        console.log("== startConnectionCheck ==");
-        connectionCheckInterval = setInterval(() => {
-            if (!ros || !ros.isConnected) {
-                console.warn("Connexion ROS perdue. Tentative de reconnexion...");
-                updateStatusDisplay('Connexion perdue...', false);
-                attemptReconnection();
-            } else {
-                console.log("Vérification de connexion : Connecté.");
-            }
-        }, 5000); // Vérifie toutes les 5 secondes
-    };
-
-    // Arrêter la vérification de connexion
-    const stopConnectionCheck = () => {
-        clearInterval(connectionCheckInterval);
-    };
-
-    // Tentative de reconnexion
-    const attemptReconnection = () => {
-        if (reconnectionAttempts >= maxReconnectionAttempts) {
-            updateStatusDisplay('Échec de reconnexion après plusieurs tentatives.', false);
-            stopConnectionCheck(); // Arrêter la vérification si le max est atteint
-            return;
-        }
-
-        reconnectionAttempts++;
-        setTimeout(() => {
-            connectToRos();
-        }, reconnectionDelay);
-    };
-
-    // Affichages des lives
-    const uptadeBookList = (data) => {
-        console.log(data);
-    }
-
-    // Affichage / masquage du bouton Reconnexion
-    const updateReloadButtonVisibility = (isConnected) => {
-        console.log("updateReloadButtonVisibility : " + updateReloadButtonVisibility);
-        elements.reloadBtn.style.display = isConnected ? 'none' : 'block';
-    };
-
-    // Mise à jour des éléments d'état
-    const updateStatusDisplay = (status, isConnected) => {
-        console.log("updateStatusDisplay : " + isConnected);
-        elements.statusDiv.textContent = `Status: ${status}`;
-        elements.statusCircle.style.display = isConnected ? 'grid' : 'none';
-        elements.loadingAnimator.style.display = isConnected ? 'none' : 'grid';
-        elements.reloadBtn.style.display = isConnected ? 'none' : 'block';
-    };
-
-    // Mise à jour de l'écouteur
-    const updateListenerDisplay = (isListening) => {
-        console.log("isListening : " + isListening);
-        if (typeof isListening !== 'boolean') {
-            console.error("Erreur : La donnée passée à 'updateListenerDisplay' n'est pas un booléen.");
-            elements.listenerMsg.textContent = "Erreur : État inconnu.";
-            elements.listenTrue.style.display = 'none';
-            elements.listenFalse.style.display = 'none';
-            return; // Stoppe l'exécution
-        }else{
-            elements.listenerMsg.textContent = isListening ? "Je t'écoute :D" : "Je ne t'écoute pas ;)";
-            elements.listenTrue.style.display = isListening ? 'grid' : 'none';
-            elements.listenFalse.style.display = isListening ? 'none' : 'grid';
-        }
-    };
-
-    // Gestion des messages STT
-    const handlePartialMessage = (message) => {
-        // console.log("handlePartialMessage : " + handlePartialMessage);
-        if (!isSttEnabled) return;
-        if (!partialSpan) {
-            partialSpan = document.createElement('span');
-            partialSpan.className = 'partial';
-            elements.transcriptionDiv.appendChild(partialSpan);
-        }
-        partialSpan.textContent = message.data;
-    };
-
-    const handleFullMessage = (message) => {
-        // console.log("handleFullMessage : " + handleFullMessage);
-        if (!isSttEnabled) return;
-        if (partialSpan) {
-            partialSpan.remove();
-            partialSpan = null;
-        }
-        if (currentFinalSpan) {
-            if (previousFinalSpan) previousFinalSpan.remove();
-            previousFinalSpan = currentFinalSpan;
-            previousFinalSpan.className = 'previous-final';
-        }
-        currentFinalSpan = document.createElement('span');
-        currentFinalSpan.className = 'final';
-        currentFinalSpan.textContent = message.data;
-        elements.transcriptionDiv.appendChild(currentFinalSpan);
-    };
-
-    // Gestion des événements
-    elements.reloadBtn.addEventListener('click', connectToRos);
-
-    elements.toggleMic.addEventListener('click', () => {
-        elements.toggleMic.disabled = true;
-        setTimeout(() => (elements.toggleMic.disabled = false), 3000);
-
-        toggleMicValue = !toggleMicValue;
-        elements.toggleMic.style.backgroundColor = toggleMicValue ? 'lime' : 'red';
-        elements.toggleMic.style.color = toggleMicValue ? 'black' : 'white';
-
-        const micService = new ROSLIB.Service({
-            ros: new ROSLIB.Ros(),
-            name: '/tiago_interact/stt/toggle',
-            serviceType: 'std_srvs/Empty',
-        });
-
-        micService.callService(new ROSLIB.ServiceRequest(), () => console.log('Service appelé avec succès'));
-    });
-
-    elements.settingsBtn.addEventListener('click', () => {
-        elements.optionsDiv.style.display = elements.optionsDiv.style.display === 'none' ? 'block' : 'none';
-    });
-
-    // Initialisation
-    importRoslib();
-    
-});
-</script>
-
-
+<!--
 <style>
-    /* Styles de base */
+    /* Général: Centrer horizontalement le contenu */
     html {
         display: flex;
         justify-content: center;
     }
 
+    /* Corps principal: Styles de base */
     body {
-        margin: 0px 20px;
+        margin: 0 20px;
         font-family: 'Arial', sans-serif;
         color: #333;
-        background: linear-gradient(135deg, #6a89cc, #a29bfe);
+        background: linear-gradient(135deg, #6a89cc, #a29bfe); /* Dégradé bleu-violet */
         line-height: 1.6;
-        height: 100vh; /* Ajouté */
-        overflow: hidden; /* Ajouté */
+        height: 100vh; /* Prend toute la hauteur */
+        overflow: hidden; /* Cache le contenu qui dépasse */
         flex: auto;
-        max-width: 800px;
+        max-width: 800px; /* Largeur maximale du contenu */
     }
 
+    /* Titres principaux */
     h1 {
         color: white;
         text-align: center;
     }
 
+    /* Navigation */
     nav {
         margin: 20px 0;
     }
 
     nav a {
-        color: #fff;
+        color: white;
         text-decoration: none;
         margin: 0 15px;
     }
 
-    /*  */
-
-    #whiteCase {
-        /* container */
-        margin-top: 30px;
-
-        /* Border */
-        border-style: solid;
-        border-width: 3px;
-        border-color: whitesmoke;
-        border-radius: 25px;
-
-        /* Texte */
+    /* Texte retranscrit par Tiago */
+    #retanscript {
+        font-family: sans-serif;
         color: white;
         font-size: 24px;
         font-weight: bolder;
-        font-style: oblique;
-
-        /* Background */
-        box-shadow: 5px 5px 5px whitesmoke;
     }
 
-    #listener, #transcription {
+    /* Bloc principal */
+    #whiteCase {
+        margin-top: 30px;
+        border: 3px solid whitesmoke; /* Bordures blanches */
+        border-radius: 25px; /* Coins arrondis */
         color: white;
-        padding: 10px 10px;
+        font-size: 24px;
+        font-weight: bolder;
+        font-style: oblique; /* Italique incliné */
+        box-shadow: 5px 5px 5px whitesmoke; /* Effet d'ombre */
+    }
+
+    /* Zones d'écoute et de transcription */
+    #listener,
+    #transcription {
+        color: white;
+        padding: 10px;
     }
 
     #listener {
         display: flex;
-        gap: 20px;
+        gap: 20px; /* Espacement entre les éléments */
         align-items: center;
         justify-content: center;
-        border-bottom-style: solid;
+        border-bottom: solid; /* Ligne de séparation */
     }
 
     #transcription {
-        /* Texte */
         font-size: 24px;
         font-weight: bolder;
         font-style: oblique;
-
-        min-height: 140px;
+        min-height: 140px; /* Hauteur minimale */
     }
 
+    /* Texte: Partial et Final */
     .partial {
-        color:chartreuse;
+        color: chartreuse; /* Vert fluo */
         font-style: italic;
         padding-left: 7px;
     }
 
-    .final{
+    .final {
         margin-left: 7px;
     }
 
+    .previous-final {
+        color: white;
+        font-style: italic;
+        padding-left: 7px;
+    }
+
+    /* Indicateur d'état */
     #circle {
-        display: none;
+        display: none; /* Caché par défaut */
         height: 45px;
         width: 45px;
-        border-radius: 50px;
-        background-color: lime;
+        border-radius: 50px; /* Cercle parfait */
+        background-color: lime; /* Vert pour l'état "connecté" */
     }
 
-    #loader {
-        display: none;
-    }
-
-    /* Loader disconnect */
-
-    .loader {
-        width: 40px;
-        aspect-ratio: 1;
-        display: grid;
-    }
-    .loader::before,
-    .loader::after {    
-        content:"";
-        grid-area: 1/1;
-        --c:no-repeat radial-gradient(farthest-side, red 92%,#0000);
-        background: 
-            var(--c) 50%  0, 
-            var(--c) 50%  100%, 
-            var(--c) 100% 50%, 
-            var(--c) 0    50%;
-        background-size: 12px 12px;
-        animation: l12 1s infinite;
-    }
-    .loader::before {
-        margin: 4px;
-        filter: hue-rotate(45deg);
-        background-size: 8px 8px;
-        animation-timing-function: linear
-    }
-
-    @keyframes l12 { 
-        100%{transform: rotate(.5turn)}
-    }
-
-    /* Loader d'écoute */
-
+    /* Loader */
+    .loader,
     .listen {
         width: 40px;
         aspect-ratio: 1;
         display: grid;
     }
+
+    /* Animation des loaders */
+    .loader::before,
+    .loader::after,
     .listen::before,
-    .listen::after {    
-        content:"";
+    .listen::after {
+        content: "";
         grid-area: 1/1;
-        --c:no-repeat radial-gradient(farthest-side, lime 92%,#0000);
-        background: 
-            var(--c) 50%  0, 
-            var(--c) 50%  100%, 
-            var(--c) 100% 50%, 
-            var(--c) 0    50%;
+        --c: no-repeat radial-gradient(farthest-side, red 92%, #0000);
+        background: var(--c) 50% 0, var(--c) 50% 100%, var(--c) 100% 50%, var(--c) 0 50%;
         background-size: 12px 12px;
         animation: l12 1s infinite;
     }
+
+    /* Loader "écoute" */
     .listen::before {
         margin: 4px;
-        filter: hue-rotate(45deg);
+        filter: hue-rotate(45deg); /* Ajuste la couleur du cercle */
         background-size: 8px 8px;
-        animation-timing-function: linear
+        animation-timing-function: linear;
     }
 
-    #status, #options {
+    @keyframes l12 {
+        100% {
+            transform: rotate(0.5turn); /* Rotation à 180 degrés */
+        }
+    }
+
+    /* Conteneurs divers */
+    #status,
+    #options,
+    #container-questions-anwsers {
         display: flex;
         justify-content: flex-start;
-        align-self: flex-start;
         align-items: center;
         gap: 10px;
     }
 
+    /* Conteneur des questions et réponses */
+    #container-questions-anwsers {
+        text-align: left;
+        color: white;
+        font-size: 24px;
+        font-weight: 501;
+        margin-top: 20px;
+        flex-direction: column;
+        min-height: 50px;
+    }
+
+    /* Options masquées par défaut */
     #options {
         display: none;
         justify-content: center;
-        margin: 20px 0px 20px 0px;
-        padding: 10px 0px;
-
-        /* A Voir 
-        border-radius: 10px;
-        border-style: solid;
-        border-width: 3px;
-        border-color: #00c6ff;
-        box-shadow: 5px 5px 5px #00c6ff;
-
-        /* border: solid;*/
+        margin: 20px 0;
+        padding: 10px 0;
     }
 
-    #settings {
-        display: flex;
-        justify-content: flex-end;
-        flex: 1 1 auto;
-    }
-
-    #settings-btn{
+    /* Boutons et crédits */
+    #settings-btn,
+    #toggle-mic,
+    #reload-btn {
         color: black;
         padding: 10px;
         font-size: 18px;
-        background-color: lime;
         font-weight: bold;
-
-        border-style: none;
+        background-color: lime;
+        border: none;
         border-radius: 10px;
-    }
-
-    #status-text {
-        padding: 10px;
-        border-radius: 5px;
-        font-size: 24px;
-        color: white;
-        font-weight: 501;
     }
 
     #reload-btn {
-        padding: 10px;
-        font-size: 24px;
         background-color: red;
         color: white;
-
-        border-style: none;
-        border-radius: 10px;
-    }
-
-    #toggle-mic {
-        color: black;
-        padding: 10px;
-        font-size: 18px;
-        background-color: lime;
-        font-weight: bold;
-
-        border-style: none;
-        border-radius: 10px;
-    }
-
-    #toggle-mic[disabled]{
-        cursor: not-allowed;
-        color: whitesmoke;
-        opacity: 0.7;
+        font-size: 24px;
     }
 
     #credits {
         margin-top: 25px;
         font-style: italic;
     }
-
-    .hero {
-        background: linear-gradient(180deg, rgba(38, 198, 218, 0.8), rgba(0, 0, 0, 0.7)), url('image.jpg') no-repeat center center/cover;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        color: #fff;
-    }
-
-    section {
-        padding: 20px;
-    }
-
-    .project-card {
-        background: linear-gradient(45deg, #ff6a00, #ee0979);
-        border-radius: 10px;
-        padding: 20px;
-        margin: 10px;
-        transition: transform 0.3s;
-    }
-
-    .project-card:hover {
-        transform: scale(1.05);
-    }
-
-    .testimonial {
-
-        background: linear-gradient(90deg, #00c6ff, #0072ff);
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px;
-    }
-
-    /* Media Queries pour différentes résolutions */
-
-    /* Smartphones */
-    @media (max-width: 640px) {
-        body {
-            font-size: 14px;
-        }
-
-        .hero {
-            height: 70vh;
-        }
-
-        nav {
-            display: flex;
-            flex-direction: column;
-        }
-
-        nav a {
-            margin: 5px 0;
-        }
-
-        .project-card, .testimonial {
-            padding: 15px;
-            margin: 5px;
-        }
-    }
-
-    /* Tablettes */
-    @media (min-width: 641px) and (max-width: 1024px) {
-        body {
-            font-size: 16px;
-        }
-
-        .hero {
-            height: 80vh;
-        }
-
-        nav {
-            display: flex;
-            justify-content: center;
-        }
-
-        .project-card, .testimonial {
-            padding: 20px;
-            margin: 10px;
-        }
-    }
-
-    /* Ordinateurs de bureau */
-    @media (min-width: 1025px) {
-        body {
-            font-size: 18px;
-        }
-
-        .hero {
-            height: 100vh;
-        }
-
-        nav {
-            display: flex;
-            justify-content: center;
-        }
-
-        .project-card, .testimonial {
-            padding: 25px;
-            margin: 15px;
-        }
-    }
 </style>
+
+-->
 
 <!-- Made by CUYNAT MAXIM 2024-2025 -->

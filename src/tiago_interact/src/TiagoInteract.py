@@ -71,11 +71,13 @@ class TiagoInteract:
         if not self.is_using_stt:
             return
         try:
-            self.stt_msg = ros_msg.data
-            if self.stt_msg in self.q_answers:
-                self.q_answer = self.stt_msg
+            self.stt_msg = ros_msg.data.lower()
+            found_answers = [answer for answer in self.q_answers if answer in self.stt_msg]
+            
+            if len(found_answers) == 1:
+                self.q_answer = found_answers[0]
             else:
-                self.say("Je n'ai pas compris. Merci de répondre par oui ou non")
+                self.say(f"Je n'ai pas compris. Merci de répondre par {' ou '.join(self.q_answers)}")
         except Exception as e:
             self.error(e)
     

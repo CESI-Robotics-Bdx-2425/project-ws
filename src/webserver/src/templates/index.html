@@ -82,6 +82,8 @@
     let isSttEnabled = true;
     let isInteractStatus = false;
     let tiagoSay = null;
+    let settingsClickCount = 0;
+    let settingsClickTimer = null;
 
     // Reconnection Variables
     let reconnectionAttempts = 0;
@@ -185,7 +187,6 @@
         attemptReconnection();
       });
 
-      // Subscribe to topics
       subscribeToTopics();
     };
 
@@ -202,7 +203,6 @@
       topics.tiago_interact_stt_status.subscribe((message) => {
         isSttEnabled = message.data;
         elements.transcriptionDiv.style.display = isSttEnabled ? "block" : "none";
-        // elements.answersDiv.style.display = isSttEnabled ? "none" : "block";
         updateListenerDisplay(isSttEnabled);
       });
 
@@ -232,53 +232,43 @@
     };
 
     const loadAnswersAndDisplay = (answers) => {
-        elements.answersDiv.innerHTML = ""; // Vider le conteneur des réponses
-        if (answers && answers.data) {
-            const answerList = answers.data.split(",");
-            answerList.forEach((answer) => {
-                const answerElement = document.createElement("button");
-                answerElement.className = "answer-element";
-                answerElement.textContent = answer.trim();
-                answerElement.addEventListener("click", () => {
-                    callAnswerService(answer.trim()); // Appeler le service avec la réponse
-                });
-                elements.answersDiv.appendChild(answerElement);
-            });
-        } else {
-            elements.answersDiv.textContent = "Aucune réponse disponible.";
-        }
-    };
-
-    const callAnswerService = (answer) => {
-        const answerService = new ROSLIB.Service({
-            ros: ros,
-            name: `/tiago_interact/gui/answer`, // Remplacez par le nom de votre service
-            serviceType: "tiago_interact/TiagoInteractGUI", // Remplacez par le type de votre service
-        });
-
-        answerService.callService(new ROSLIB.ServiceRequest({
-          answer: answer
-        }), (result) => {
-            console.log(`Service '${answer}' appelé avec succès`, result);
-        }, (error) => {
-            console.error(`Erreur lors de l'appel du service '${answer}'`, error);
-        });
-    };
-    
-    /* const loadAnswersAndDisplay = (answers) => {
       elements.answersDiv.innerHTML = "";
       if (answers && answers.data) {
         const answerList = answers.data.split(",");
         answerList.forEach((answer) => {
-          const answerElement = document.createElement("div");
+          const answerElement = document.createElement("button");
           answerElement.className = "answer-element";
           answerElement.textContent = answer.trim();
+          answerElement.addEventListener("click", () => {
+            callAnswerService(answer.trim());
+          });
           elements.answersDiv.appendChild(answerElement);
         });
       } else {
         elements.answersDiv.textContent = "Aucune réponse disponible.";
       }
-    }; 
+    };
+
+    const callAnswerService = (answer) => {
+      const answerService = new ROSLIB.Service({
+        ros: ros,
+        name: `/tiago_interact/gui/answer`,
+        serviceType: "tiago_interact/TiagoInteractGUI",
+      });
+
+      answerService.callService(
+        new ROSLIB.ServiceRequest({
+          answer: answer
+        }),
+        (result) => {
+          console.log(`Service '${answer}' appelé avec succès`, result);
+        },
+        (error) => {
+          console.error(`Erreur lors de l'appel du service '${answer}'`, error);
+        }
+      );
+    };
+
     const attemptReconnection = () => {
       if (reconnectionAttempts >= maxReconnectionAttempts) {
         updateStatusDisplay("Échec de reconnexion après plusieurs tentatives.", false);
@@ -289,16 +279,11 @@
       reconnectionAttempts++;
       console.log(`Tentative de reconnexion : ${reconnectionAttempts} / ${maxReconnectionAttempts}`);
       setTimeout(connectToRos, reconnectionDelay);
-    };*/
+    };
 
     const updateReloadButtonVisibility = (isConnected) => {
       elements.reloadBtn.style.display = isConnected ? "none" : "block";
     };
-
-    // Optionel mais fonction non implémenter
-    /*const upDateReffiilButtonVisibility = (state) => {
-      elements.refillToggle.style.display = state ? "block" : "none";
-    };*/
 
     const updateStatusDisplay = (status, isConnected) => {
       elements.statusDiv.textContent = `Status: ${status}`;
@@ -311,12 +296,11 @@
       console.log("isListening : " + isListening);
       if (typeof isListening !== "boolean") {
         console.error("Erreur : La donnée passée à 'updateListenerDisplay' n'est pas un booléen.");
-        
         elements.listenerMsg.textContent = "Erreur : État inconnu.";
         elements.listenTrue.style.display = "none";
         elements.listenFalse.style.display = "none";
         return;
-      }else{
+      } else {
         elements.listenerMsg.textContent = isListening ? "Je t'écoute :D" : "Je ne t'écoute pas ;)";
         elements.listenTrue.style.display = isListening ? "Grid" : "none";
         elements.listenFalse.style.display = isListening ? "none" : "Grid";
@@ -351,12 +335,9 @@
       elements.transcriptionDiv.appendChild(currentFinalSpan);
     };
 
-    // Event Listeners
     document.addEventListener("DOMContentLoaded", () => {
-      // Reload the page when the reload button is clicked
       elements.reloadBtn.addEventListener("click", connectToRos);
       
-      // Toggle the microphone on/off
       elements.toggleMic.addEventListener("click", () => {
         elements.toggleMic.disabled = true;
         setTimeout(() => (elements.toggleMic.disabled = false), 3000);
@@ -364,7 +345,6 @@
         console.log("toggleMicValue : " + toggleMicValue);
         elements.toggleMic.style.backgroundColor = toggleMicValue ? "lime" : "red";
         elements.toggleMic.style.color = toggleMicValue ? "black" : "white";
-
         elements.retranscriptionDiv.style.display = toggleMicValue ? "block" : "none";
 
         const micService = new ROSLIB.Service({
@@ -374,17 +354,31 @@
         });
 
         micService.callService(
-          new ROSLIB.ServiceRequest(), () => console.log("Service appelé avec succès")
+          new ROSLIB.ServiceRequest(),
+          () => console.log("Service appelé avec succès")
         );
       });
       
-      // Settings button
       elements.settingsBtn.addEventListener("click", () => {
-        elements.optionsDiv.style.display = elements.optionsDiv.style.display === "none" ? "flex" : "none";
+        settingsClickCount++;
+        
+        if (settingsClickTimer) {
+          clearTimeout(settingsClickTimer);
+        }
+        
+        settingsClickTimer = setTimeout(() => {
+          settingsClickCount = 0;
+        }, 3000);
+        
+        if (settingsClickCount >= 5) {
+          elements.optionsDiv.style.display = elements.optionsDiv.style.display === "none" ? "flex" : "none";
+          settingsClickCount = 0;
+        }
       });
       
-      // Refill button
       elements.refillToggle.addEventListener("click", () => {
+        elements.refillToggle.style.backgroundColor = "orange";
+        
         const refillService = new ROSLIB.Service({
           ros: ros,
           name: "/refill",
@@ -392,15 +386,17 @@
         });
 
         refillService.callService(
-          new ROSLIB.ServiceRequest(), () => console.log("Service appelé avec succès")
+          new ROSLIB.ServiceRequest(),
+          () => {
+            console.log("Service appelé avec succès");
+            elements.refillToggle.style.backgroundColor = "lime";
+          }
         );
       });
     });
 
-    // Start the application
     startup();
   }
 
-  // When the file is loaded, launch the script
   initializeApp();
 </script>

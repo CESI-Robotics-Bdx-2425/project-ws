@@ -33,9 +33,10 @@ class TakeState(smach.State):
                 userdata.book_count[userdata.flyer_id] -= 1             
                 rospy.loginfo(f"Pick : {r}")
                 rospy.sleep(1)
-                self.tts.say("Bonne journée")
+                self.tts.say("Bonne journée. Je vous souhaite une bonne continuation pour votre visite au sein du Campus CESI de Bordeaux.")
                 if userdata.book_count[userdata.flyer_id] == 0:
                     return 'refill'
+                rospy.sleep(10)
                 return "idle"
 
         except rospy.ServiceException as e:

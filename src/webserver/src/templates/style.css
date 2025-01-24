@@ -20,7 +20,7 @@ h1 {
     text-align: center;
 }
 
-#listener-msg{
+#listener-msg {
     color: white;
     font-size: 24px;
     font-weight: bolder;
@@ -114,11 +114,11 @@ h1 {
     animation-timing-function: linear;
 }
 
-.listen-false{
+.listen-false {
     --c: no-repeat radial-gradient(farthest-side, red 92%, #0000);
 }
 
-.listen-true{
+.listen-true {
     --c: no-repeat radial-gradient(farthest-side, lime 92%, #0000);
 }
 
@@ -153,7 +153,7 @@ h1 {
 
 #options {
     display: none;
-    justify-content: space-evenly ;
+    justify-content: space-evenly;
     margin: 20px 0;
     padding: 10px 0;
 }
@@ -219,6 +219,9 @@ h1 {
     cursor: pointer;
     transition: background-color 0.2s;
     border: none;
+    width: 300px;
+    height: 150px;
+    text-transform: uppercase;
 }
 
 .answer-element:hover {

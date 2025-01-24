@@ -4,17 +4,6 @@
   <head>
     <meta charset="utf-8" />
     <title>Transcription en temps réel</title>
-    <!--<script>
-      const hostname = window.location.hostname;
-      document.addEventListener("DOMContentLoaded", () => {
-        const script = document.createElement("script");
-        script.src = `http://${hostname}:8000/js`;
-        script.type = "text/javascript";
-        //script.onload=()=>{console.log("J c'est le S de Tiago get !");resolve(true)};
-        //script.onerror=()=>{console.error("Erreur lors du chargement de J c'est le S de tiago ++.");reject(false)};
-        document.head.appendChild(script);
-      });
-    </script>-->
   </head>
 
   <body>
@@ -103,6 +92,7 @@
       listenTrue: document.getElementById("listen-true"),
       listenFalse: document.getElementById("listen-false"),
       questionData: document.getElementById("question-data"),
+      containerQuestionAnswers: document.getElementById("container-questions-anwsers"),
       retranscriptionDiv: document.getElementById("retanscript-div"),
       refillToggle: document.getElementById("toggle-refill"),
     };
@@ -381,6 +371,7 @@
       // Settings button
       elements.settingsBtn.addEventListener("click", () => {
         elements.optionsDiv.style.display = elements.optionsDiv.style.display === "none" ? "flex" : "none";
+        elements.containerQuestionAnswers.style.display = elements.containerQuestionAnswers.style.display === "none" ? "flex" : "none";
       });
       
       // Refill button

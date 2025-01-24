@@ -2,8 +2,6 @@
 import rospy
 import smach
 import smach_ros
-from std_srvs.srv import Empty
-from std_msgs.msg import String
 
 from states.IdleState import IdleState
 from states.ScanTableState import ScanTableState
@@ -30,7 +28,7 @@ def main():
     sm.userdata.book_count = {0: 3, 3: 3, 2: 3}
     
     with sm:
-        smach.StateMachine.add('START', StartState(), transitions={'scanTable': 'IDLE'})
+        smach.StateMachine.add('START', StartState(), transitions={'scanTable': 'SCANTABLE'})
         smach.StateMachine.add('SCANTABLE', ScanTableState(), transitions={'scanBook': 'SCANBOOK', 'error':'ERROR'})
         smach.StateMachine.add('SCANBOOK', BookScanState(), transitions={'idle': 'IDLE','error':'ERROR'})
         

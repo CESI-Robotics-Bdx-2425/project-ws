@@ -76,6 +76,7 @@ class TiagoAsker():
         
         # Get a result sentence
         print(q_type, self.selected_question)
+        self.a_topic.publish("")
         selected_result = [r for r in self.questions['results'] if r['type'] == q_type][0]
         _ = self.tts_service(selected_result['sentence'])
         return selected_result['flyer_id']

@@ -14,6 +14,7 @@ class RefillState(smach.State):
         
     def handle_refill(self, data):
         self.is_refill = True
+        rospy.loginfo('Refill done')
         return EmptyResponse()
 
 

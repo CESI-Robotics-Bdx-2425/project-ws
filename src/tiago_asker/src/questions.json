@@ -1,6 +1,6 @@
 {
     "intro": [
-        "Bonjour, je suis TIAGO le robot, je vais vous poser quelques questions pour mieux vous connaître et vous guider parmi les formations que nous proposons.Je vais maintenant vous poser une série de questions afin de déterminer si vous comptez faire une formation chez nous en cursus ingénieur, Mastère professionnel ou Bachelor spécialisé",
+        "Bonjour, je suis TIAGO le robot, je vais vous poser quelques questions pour mieux vous connaître et vous guider parmi les formations que nous proposons. Je vais maintenant vous poser une série de questions afin de déterminer si vous comptez faire une formation chez nous en cursus ingénieur, Mastère professionnel ou Bachelor spécialisé",
         "Bonjour et bienvenue au CESI, je suis TIAGO le robot, je vais vous poser quelques questions pour mieux vous connaître et vous guider parmi les formations que nous proposons. Je vais maintenant vous poser une série de questions afin de déterminer si vous comptez faire une formation chez nous en cursus ingénieur, Mastère professionnel ou Bachelor spécialisé"
     ],
     "questions": [
@@ -77,7 +77,7 @@
         },
         {
             "type": "result_mastere_pro",
-            "sentence": "Je vous conseil le programme de Mastère professionnel. Vous trouverez les détails dans cette brochure.",
+            "sentence": "Je vous conseille le programme de Mastère professionnel. Vous trouverez les détails dans cette brochure.",
             "flyer_id": 2
         },
         {

@@ -1,29 +1,25 @@
-/* Général: Centrer horizontalement le contenu */
 html {
     display: flex;
     justify-content: center;
 }
 
-/* Corps principal: Styles de base */
 body {
     margin: 0 20px;
     font-family: 'Arial', sans-serif;
     color: #333;
-    background: linear-gradient(135deg, #6a89cc, #a29bfe); /* Dégradé bleu-violet */
+    background: linear-gradient(135deg, #6a89cc, #a29bfe);
     line-height: 1.6;
-    height: 100vh; /* Prend toute la hauteur */
-    overflow: hidden; /* Cache le contenu qui dépasse */
+    height: 100vh;
+    overflow: hidden;
     flex: auto;
-    max-width: 800px; /* Largeur maximale du contenu */
+    max-width: 800px;
 }
 
-/* Titres principaux */
 h1 {
     color: white;
     text-align: center;
 }
 
-/* Texte retranscrit par Tiago */
 #retanscript {
     font-family: sans-serif;
     color: white;
@@ -31,19 +27,17 @@ h1 {
     font-weight: bolder;
 }
 
-/* Bloc principal */
 #whiteCase {
     margin-top: 30px;
-    border: 3px solid whitesmoke; /* Bordures blanches */
-    border-radius: 25px; /* Coins arrondis */
+    border: 3px solid whitesmoke;
+    border-radius: 25px;
     color: white;
     font-size: 24px;
     font-weight: bolder;
-    font-style: oblique; /* Italique incliné */
-    box-shadow: 5px 5px 5px whitesmoke; /* Effet d'ombre */
+    font-style: oblique;
+    box-shadow: 5px 5px 5px whitesmoke;
 }
 
-/* Zones d'écoute et de transcription */
 #listener,
 #transcription {
     color: white;
@@ -52,22 +46,21 @@ h1 {
 
 #listener {
     display: flex;
-    gap: 20px; /* Espacement entre les éléments */
+    gap: 20px;
     align-items: center;
     justify-content: center;
-    border-bottom: solid; /* Ligne de séparation */
+    border-bottom: solid;
 }
 
 #transcription {
     font-size: 24px;
     font-weight: bolder;
     font-style: oblique;
-    min-height: 140px; /* Hauteur minimale */
+    min-height: 140px;
 }
 
-/* Texte: Partial et Final */
 .partial {
-    color: chartreuse; /* Vert fluo */
+    color: chartreuse;
     font-style: italic;
     padding-left: 7px;
 }
@@ -82,16 +75,14 @@ h1 {
     padding-left: 7px;
 }
 
-/* Indicateur d'état */
 #circle {
-    display: none; /* Caché par défaut */
+    display: none;
     height: 45px;
     width: 45px;
-    border-radius: 50px; /* Cercle parfait */
-    background-color: lime; /* Vert pour l'état "connecté" */
+    border-radius: 50px;
+    background-color: lime;
 }
 
-/* Loader */
 .loader,
 .listen {
     width: 40px;
@@ -99,7 +90,6 @@ h1 {
     display: grid;
 }
 
-/* Animation des loaders */
 .loader::before,
 .loader::after,
 .listen::before,
@@ -112,21 +102,19 @@ h1 {
     animation: l12 1s infinite;
 }
 
-/* Loader "écoute" */
 .listen::before {
     margin: 4px;
-    filter: hue-rotate(45deg); /* Ajuste la couleur du cercle */
+    filter: hue-rotate(45deg);
     background-size: 8px 8px;
     animation-timing-function: linear;
 }
 
 @keyframes l12 {
     100% {
-        transform: rotate(0.5turn); /* Rotation à 180 degrés */
+        transform: rotate(0.5turn);
     }
 }
 
-/* Conteneurs divers */
 #status,
 #options,
 #container-questions-anwsers {
@@ -140,7 +128,6 @@ h1 {
     justify-content: space-evenly;
 }
 
-/* Conteneur des questions et réponses */
 #container-questions-anwsers {
     text-align: left;
     color: white;
@@ -151,7 +138,6 @@ h1 {
     min-height: 50px;
 }
 
-/* Options masquées par défaut */
 #options {
     display: none;
     justify-content: center;
@@ -159,7 +145,6 @@ h1 {
     padding: 10px 0;
 }
 
-/* Boutons et crédits */
 #settings-btn,
 #toggle-mic,
 #reload-btn {
@@ -170,6 +155,13 @@ h1 {
     background-color: lime;
     border: none;
     border-radius: 10px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+#settings-btn:hover,
+#toggle-mic:hover {
+    opacity: 0.8;
 }
 
 #reload-btn {
@@ -181,13 +173,22 @@ h1 {
 #credits {
     margin-top: 25px;
     font-style: italic;
+    color: white;
+    text-align: center;
 }
 
-#answers-data {
+#answers-data, 
+#question-answers {
     display: flex;
+    flex-direction: row;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
+}
+
+#answers-data {
+    flex-wrap: wrap;
+    margin: 10px 0;
 }
 
 .answer-element {
@@ -199,6 +200,14 @@ h1 {
     border-radius: 10px;
     background-color: #333;
     color: white;
+    font-size: 25px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: none;
+}
+
+.answer-element:hover {
+    background-color: #555;
 }
 
 #status-text {

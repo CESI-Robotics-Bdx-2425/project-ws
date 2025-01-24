@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <title>Transcription en temps réel</title>
-    <script>
+    <!--<script>
       const hostname = window.location.hostname;
       document.addEventListener("DOMContentLoaded", () => {
         const script = document.createElement("script");
@@ -14,7 +14,7 @@
         //script.onerror=()=>{console.error("Erreur lors du chargement de J c'est le S de tiago ++.");reject(false)};
         document.head.appendChild(script);
       });
-    </script>
+    </script>-->
   </head>
 
   <body>
@@ -40,6 +40,7 @@
     <!-- Bouttons des options -->
     <div id="options">
       <button id="toggle-mic">Micro On/Off</button>
+      <button id="toggle-refill">Refill</button>
     </div>
 
     <!-- Affichage des questions-->
@@ -202,7 +203,7 @@
       topics.tiago_interact_stt_status.subscribe((message) => {
         isSttEnabled = message.data;
         elements.transcriptionDiv.style.display = isSttEnabled ? "block" : "none";
-        elements.answersDiv.style.display = isSttEnabled ? "none" : "block";
+        // elements.answersDiv.style.display = isSttEnabled ? "none" : "block";
         updateListenerDisplay(isSttEnabled);
       });
 
@@ -278,9 +279,7 @@
       } else {
         elements.answersDiv.textContent = "Aucune réponse disponible.";
       }
-    };
-    */
-
+    }; */
     const attemptReconnection = () => {
       if (reconnectionAttempts >= maxReconnectionAttempts) {
         updateStatusDisplay("Échec de reconnexion après plusieurs tentatives.", false);
@@ -299,8 +298,8 @@
 
     const updateStatusDisplay = (status, isConnected) => {
       elements.statusDiv.textContent = `Status: ${status}`;
-      elements.statusCircle.style.display = isConnected ? "grid" : "none";
-      elements.loadingAnimator.style.display = isConnected ? "none" : "grid";
+      elements.statusCircle.style.display = isConnected ? "Grid" : "none";
+      elements.loadingAnimator.style.display = isConnected ? "none" : "Grid";
       elements.reloadBtn.style.display = isConnected ? "none" : "block";
     };
 
@@ -314,8 +313,8 @@
         return;
       }
       elements.listenerMsg.textContent = isListening ? "Je t'écoute :D" : "Je ne t'écoute pas ;)";
-      elements.listenTrue.style.display = isListening ? "grid" : "none";
-      elements.listenFalse.style.display = isListening ? "none" : "grid";
+      elements.listenTrue.style.display = isListening ? "Grid" : "none";
+      elements.listenFalse.style.display = isListening ? "none" : "Grid";
     };
 
     const handlePartialMessage = (message) => {
@@ -337,7 +336,7 @@
       if (currentFinalSpan) {
         if (previousFinalSpan) previousFinalSpan.remove();
         previousFinalSpan = currentFinalSpan;
-        previousFinalSpan.className = "partial";
+        previousFinalSpan.className = "previous-final";
       }
 
       currentFinalSpan = document.createElement("span");

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import rospy
-from tiago_interact.srv import TiagoInteractTTS, TiagoInteractSTT, TiagoInteractGUI
+from tiago_interact.srv import TiagoInteractTTS, TiagoInteractSTT, TiagoInteractGUI, TiagoInteractGUIResponse
 from pal_interaction_msgs.msg import TtsActionGoal, TtsActionResult
 import std_msgs.msg as msg
 import std_srvs.srv as srv
@@ -48,6 +48,7 @@ class TiagoInteract:
 
     def process_gui_answer(self, ros_req):
         self.q_answer = ros_req.answer
+        return TiagoInteractGUIResponse()
     
     def say(self, msg):
         # Prepare message to say
@@ -94,6 +95,7 @@ class TiagoInteract:
         while self.q_answer is None:        
             rospy.sleep(1)
         self.stt_topic.unregister()
+        return self.q_answer
     
     def toggle_stt(self, ros_req):
         self.is_using_stt = not self.is_using_stt

@@ -20,6 +20,12 @@ h1 {
     text-align: center;
 }
 
+#listener-msg{
+    color: white;
+    font-size: 24px;
+    font-weight: bolder;
+}
+
 #retanscript {
     font-family: sans-serif;
     color: white;
@@ -96,7 +102,6 @@ h1 {
 .listen::after {
     content: "";
     grid-area: 1/1;
-    --c: no-repeat radial-gradient(farthest-side, red 92%, #0000);
     background: var(--c) 50% 0, var(--c) 50% 100%, var(--c) 100% 50%, var(--c) 0 50%;
     background-size: 12px 12px;
     animation: l12 1s infinite;
@@ -107,6 +112,14 @@ h1 {
     filter: hue-rotate(45deg);
     background-size: 8px 8px;
     animation-timing-function: linear;
+}
+
+.listen-false{
+    --c: no-repeat radial-gradient(farthest-side, red 92%, #0000);
+}
+
+.listen-true{
+    --c: no-repeat radial-gradient(farthest-side, lime 92%, #0000);
 }
 
 @keyframes l12 {
@@ -140,14 +153,15 @@ h1 {
 
 #options {
     display: none;
-    justify-content: center;
+    justify-content: space-evenly ;
     margin: 20px 0;
     padding: 10px 0;
 }
 
 #settings-btn,
 #toggle-mic,
-#reload-btn {
+#reload-btn,
+#toggle-refill {
     color: black;
     padding: 10px;
     font-size: 18px;
@@ -160,7 +174,8 @@ h1 {
 }
 
 #settings-btn:hover,
-#toggle-mic:hover {
+#toggle-mic:hover,
+#toggle-refill:hover {
     opacity: 0.8;
 }
 

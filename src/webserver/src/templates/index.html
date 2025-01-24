@@ -360,12 +360,17 @@
       
       elements.toggleMic.addEventListener("click", () => {
         elements.toggleMic.disabled = true;
-        setTimeout(() => (elements.toggleMic.disabled = false), 3000);
-        toggleMicValue = !toggleMicValue;
+        // Log de debug
         console.log("toggleMicValue : " + toggleMicValue);
+        // Changement des éléments dans le DOM
+        toggleMicValue = !toggleMicValue;
         elements.toggleMic.style.backgroundColor = toggleMicValue ? "lime" : "red";
         elements.toggleMic.style.color = toggleMicValue ? "black" : "white";
         elements.retranscriptionDiv.style.display = toggleMicValue ? "block" : "none";
+        elements.containerQuestionAnswers.style.display = elements.containerQuestionAnswers.style.display === "none" ? "flex" : "none";        
+
+        // Ajoute du TTL du boutton pour ne pas surcharger le topic 
+        setTimeout(() => (elements.toggleMic.disabled = false), 3000);
  
         const micService = new ROSLIB.Service({
           ros: ros,

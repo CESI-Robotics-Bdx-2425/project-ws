@@ -1,3 +1,13 @@
 {
-    "cmake.sourceDirectory": "/home/user/code/project-ws/src/stt_processor"
+    "cmake.sourceDirectory": "/home/user/code/project-ws/src/stt_processor",
+    "python.autoComplete.extraPaths": [
+        "/home/user/code/project-ws/devel/lib/python3/dist-packages",
+        "/opt/pal/gallium/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/user/code/project-ws/devel/lib/python3/dist-packages",
+        "/opt/pal/gallium/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages"
+    ]
 }

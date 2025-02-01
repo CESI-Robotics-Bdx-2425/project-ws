@@ -35,17 +35,18 @@
     <!-- Affichage des questions-->
     <div id="container-questions-anwsers">
       <div id="question-speek-tiago">
-        <div id="question-data"></div>
+        <div id="question-data"></div>        
       </div>
       <div id="question-answers">
         <div id="answers-data"></div>
       </div>
     </div>
-
+    
     <!-- Retranscription du texte -->
+
     <div id="retanscript-div">
       <div id="listener">
-        <div id="listener-msg">Transcription libre</div>
+        <div id="listener-msg">Transcription libre</div>        
         <div class="listen listen-true" id="listen-true"></div>
         <div class="listen listen-false" id="listen-false" style="display: none"></div>
       </div>
@@ -223,23 +224,53 @@
       topics.tts_result.subscribe(onEndspeak);
     };
  
+    // Modification de la fonction loadAskTiagoRealTime
     const loadAskTiagoRealTime = (message) => {
       updateListenerDisplay(false);
       console.log(message.goal.rawtext.text);
+      
+      const messageText = message.goal.rawtext.text;
+      
+      // Vérifier si le message contient "cherche" et "brochure"
+      if (messageText.toLowerCase().includes('cherche') && messageText.toLowerCase().includes('brochure')) {
+        // Nettoyer l'affichage et masquer le conteneur des questions/réponses
+        elements.questionData.innerHTML = '';
+        elements.containerQuestionAnswers.style.display = "none";
+        return;
+      }
+      
+      // Vérifier si le message contient un point d'interrogation
+      const isQuestion = messageText.includes('?');
+      
+      // Si c'est une question, on nettoie d'abord la div
+      if (isQuestion) {
+        elements.questionData.innerHTML = '';
+      }
+      
       tiagoSay = document.createElement("span");
       tiagoSay.setAttribute("id", "retanscript");
       elements.questionData.appendChild(tiagoSay);
-      tiagoSay.textContent = message.goal.rawtext.text;
+      tiagoSay.textContent = messageText;
+      
+      // Si c'est une question, on affiche le conteneur
+      if (isQuestion) {
+        elements.containerQuestionAnswers.style.display = "flex";
+      }
     };
- 
+
+    // Modification de la fonction onEndspeak
     const onEndspeak = () => {
-      console.log("Retrait du message");
+      console.log("Fin du message");
       const lastTiagoMessage = document.querySelector("#retanscript:last-child");
       if (lastTiagoMessage) {
-        lastTiagoMessage.remove();
+        // On ne supprime le message que s'il ne contient pas de point d'interrogation
+        if (!lastTiagoMessage.textContent.includes('?')) {
+          lastTiagoMessage.remove();
+        }
         updateListenerDisplay(true);
       }
     };
+
  
     const loadAnswersAndDisplay = (answers) => {
       elements.answersDiv.innerHTML = "";
@@ -319,11 +350,15 @@
         elements.listenerMsg.textContent = "Erreur : État inconnu.";
         elements.listenTrue.style.display = "none";
         elements.listenFalse.style.display = "none";
+        document.body.style.backgroundColor = "white"; // Couleur par défaut en cas d'erreur
         return;
       } else {
-        elements.listenerMsg.textContent = isListening ? "Je t'écoute :D" : "Je ne t'écoute pas ;)";
+        elements.listenerMsg.textContent = isListening ? "Ecoute en cours" : "Micro coupé";
         elements.listenTrue.style.display = isListening ? "Grid" : "none";
         elements.listenFalse.style.display = isListening ? "none" : "Grid";
+        
+        // Changer la couleur de fond
+        document.body.style.backgroundColor = isListening ? "#e6f3ff" : "#ffe6e6"; // Bleu clair quand on peut parler, rouge clair quand on ne peut pas
       }
     };
  
@@ -339,45 +374,55 @@
  
     const handleFullMessage = (message) => {
       if (!isSttEnabled) return;
-      if (partialSpan) {
-        partialSpan.remove();
-        partialSpan = null;
-      }
-      if (currentFinalSpan) {
-        if (previousFinalSpan) previousFinalSpan.remove();
-        previousFinalSpan = currentFinalSpan;
-        previousFinalSpan.className = "previous-final";
-      }
- 
+      
+      // Nettoyer complètement la div
+      elements.transcriptionDiv.innerHTML = '';
+
+      // Créer et ajouter le nouveau message final
       currentFinalSpan = document.createElement("span");
       currentFinalSpan.className = "final";
       currentFinalSpan.textContent = message.data;
       elements.transcriptionDiv.appendChild(currentFinalSpan);
+
+      // Ajouter le saut de ligne
+      const lineBreak = document.createElement("br");
+      elements.transcriptionDiv.appendChild(lineBreak);
+
+      // Recréer le span partiel s'il existait
+      if (partialSpan) {
+        const newPartialSpan = document.createElement("span");
+        newPartialSpan.className = "partial";
+        newPartialSpan.textContent = partialSpan.textContent;
+        elements.transcriptionDiv.appendChild(newPartialSpan);
+        partialSpan = newPartialSpan;
+      }
     };
- 
+
+
     document.addEventListener("DOMContentLoaded", () => {
       elements.reloadBtn.addEventListener("click", connectToRos);
       
+      // Modification du gestionnaire d'événements du bouton micro
       elements.toggleMic.addEventListener("click", () => {
         elements.toggleMic.disabled = true;
-        // Log de debug
         console.log("toggleMicValue : " + toggleMicValue);
-        // Changement des éléments dans le DOM
+        
         toggleMicValue = !toggleMicValue;
         elements.toggleMic.style.backgroundColor = toggleMicValue ? "lime" : "red";
         elements.toggleMic.style.color = toggleMicValue ? "black" : "white";
         elements.retranscriptionDiv.style.display = toggleMicValue ? "block" : "none";
-        elements.containerQuestionAnswers.style.display = elements.containerQuestionAnswers.style.display === "none" ? "flex" : "none";        
+        
+        // On ne modifie plus l'affichage du conteneur des questions/réponses ici
+        // elements.containerQuestionAnswers.style.display = elements.containerQuestionAnswers.style.display === "none" ? "flex" : "none";
 
-        // Ajoute du TTL du boutton pour ne pas surcharger le topic 
         setTimeout(() => (elements.toggleMic.disabled = false), 3000);
- 
+
         const micService = new ROSLIB.Service({
           ros: ros,
           name: "/tiago_interact/stt/toggle",
           serviceType: "std_srvs/Empty",
         });
- 
+
         micService.callService(
           new ROSLIB.ServiceRequest(),
           () => console.log("Service appelé avec succès")

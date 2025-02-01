@@ -44,6 +44,7 @@ class IdleState(smach.State):
                     self.face_topic.unregister()
                     return 'talk'
             rate.sleep()
+        self.face_topic.unregister()
         return 'idle'
 
     def idle_callback(self, msg):

@@ -20,16 +20,16 @@ h1 {
     text-align: center;
 }
 
-#listener-msg {
-    color: white;
-    font-size: 24px;
-    font-weight: bolder;
-}
 
 #retanscript {
     font-family: sans-serif;
     color: white;
     font-size: 24px;
+    font-weight: bolder;
+}
+#listener-msg {
+    color: white;
+    font-size: 36px !important;
     font-weight: bolder;
 }
 
@@ -142,7 +142,6 @@ h1 {
 }
 
 #container-questions-anwsers {
-    display: none;
     text-align: left;
     color: white;
     font-size: 24px;
@@ -191,6 +190,10 @@ h1 {
     font-style: italic;
     color: white;
     text-align: center;
+}
+
+#question-data {
+    margin: 20px;
 }
 
 #answers-data, 

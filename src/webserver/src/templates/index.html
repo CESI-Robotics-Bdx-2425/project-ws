@@ -339,22 +339,31 @@
  
     const handleFullMessage = (message) => {
       if (!isSttEnabled) return;
-      if (partialSpan) {
-        partialSpan.remove();
-        partialSpan = null;
-      }
-      if (currentFinalSpan) {
-        if (previousFinalSpan) previousFinalSpan.remove();
-        previousFinalSpan = currentFinalSpan;
-        previousFinalSpan.className = "previous-final";
-      }
- 
+      
+      // Nettoyer complètement la div
+      elements.transcriptionDiv.innerHTML = '';
+
+      // Créer et ajouter le nouveau message final
       currentFinalSpan = document.createElement("span");
       currentFinalSpan.className = "final";
       currentFinalSpan.textContent = message.data;
       elements.transcriptionDiv.appendChild(currentFinalSpan);
+
+      // Ajouter le saut de ligne
+      const lineBreak = document.createElement("br");
+      elements.transcriptionDiv.appendChild(lineBreak);
+
+      // Recréer le span partiel s'il existait
+      if (partialSpan) {
+        const newPartialSpan = document.createElement("span");
+        newPartialSpan.className = "partial";
+        newPartialSpan.textContent = partialSpan.textContent;
+        elements.transcriptionDiv.appendChild(newPartialSpan);
+        partialSpan = newPartialSpan;
+      }
     };
- 
+
+
     document.addEventListener("DOMContentLoaded", () => {
       elements.reloadBtn.addEventListener("click", connectToRos);
       
